@@ -12,7 +12,6 @@
   <title>Executive AI — Saher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #app { height: 100%; overflow: hidden; }
@@ -242,22 +241,69 @@ const AVATAR_COLORS = ["#6366F1","#8B5CF6","#EC4899","#10B981","#F59E0B","#3B82F
 function avatarColor(name) { let h=0; for(let i=0;i<name.length;i++) h=name.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
 
 /* ─── Gmail API Functions ─── */
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (typeof google !== 'undefined' && google.accounts) {
+      resolve();
+      return;
+    }
+    // Remove any existing broken script
+    const old = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    if (old) old.remove();
+    // Load fresh
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.onload = () => {
+      // Google script loaded but API may need a moment
+      const check = () => {
+        if (typeof google !== 'undefined' && google.accounts) resolve();
+        else setTimeout(check, 200);
+      };
+      check();
+    };
+    s.onerror = () => reject(new Error('Failed to load Google sign-in'));
+    document.head.appendChild(s);
+  });
+}
+
+let _initAttempts = 0;
 function initGmailClient() {
-  if (typeof google === 'undefined' || !google.accounts) {
-    setTimeout(initGmailClient, 500);
-    return;
-  }
-  state.tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GMAIL_CLIENT_ID,
-    scope: GMAIL_SCOPES,
-    callback: handleGmailAuth,
-    prompt: '', // Will be set to 'consent' when adding new account
+  _initAttempts++;
+  loadGoogleScript().then(() => {
+    state.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GMAIL_CLIENT_ID,
+      scope: GMAIL_SCOPES,
+      callback: handleGmailAuth,
+      prompt: '',
+    });
+  }).catch(() => {
+    if (_initAttempts < 5) {
+      setTimeout(initGmailClient, 2000);
+    }
   });
 }
 
 function connectGmail() {
   if (!state.tokenClient) {
-    alert("Google sign-in is still loading. Please try again in a moment.");
+    // Try to init again and show loading state
+    state.gmailLoading = true;
+    render();
+    loadGoogleScript().then(() => {
+      state.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GMAIL_CLIENT_ID,
+        scope: GMAIL_SCOPES,
+        callback: handleGmailAuth,
+        prompt: '',
+      });
+      state.gmailLoading = false;
+      // Now actually connect
+      state.tokenClient.requestAccessToken({ prompt: 'consent' });
+    }).catch(() => {
+      state.gmailLoading = false;
+      alert("Could not load Google sign-in. Please check your internet connection and try refreshing the page.");
+      render();
+    });
     return;
   }
   state.gmailLoading = true;
@@ -866,8 +912,18 @@ function sendMsg(text) {
 /* ─── Init ─── */
 window.addEventListener("resize", render);
 render();
-initGmailClient();
-if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
+
+// Force clear old service worker caches, then register new SW
+if ("serviceWorker" in navigator) {
+  // Unregister old SWs and clear old caches first
+  caches.keys().then(keys => {
+    keys.forEach(k => { if (k !== 'exec-ai-v2') caches.delete(k); });
+  });
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+
+// Init Gmail after a short delay to let the page settle
+setTimeout(initGmailClient, 500);
 </script>
 </body>
 </html>
