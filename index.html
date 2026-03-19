@@ -12,6 +12,7 @@
   <title>Executive AI — Saher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #app { height: 100%; overflow: hidden; }
@@ -134,12 +135,48 @@
     .back-btn { background: none; border: none; color: #94A3B8; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 16px; padding: 4px 0; }
     .back-btn:hover { color: #E2E8F0; }
 
+    /* Gmail connect styles */
+    .gmail-connect { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; }
+    .gmail-connect-icon { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(139,92,246,.15)); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+    .gmail-connect h2 { font-size: 20px; font-weight: 700; color: #F8FAFC; margin-bottom: 8px; }
+    .gmail-connect p { font-size: 14px; color: #94A3B8; margin-bottom: 24px; line-height: 1.5; max-width: 360px; }
+    .gmail-connect-btn { padding: 12px 28px; background: linear-gradient(135deg,#4F46E5,#6366F1); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: transform .15s, box-shadow .15s; }
+    .gmail-connect-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,.3); }
+    .gmail-connect-btn:active { transform: translateY(0); }
+
+    /* Loading spinner */
+    .email-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid rgba(99,102,241,.2); border-top-color: #6366F1; border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Refresh button */
+    .refresh-btn { background: none; border: none; color: #64748B; cursor: pointer; padding: 4px; display: flex; align-items: center; transition: color .15s; }
+    .refresh-btn:hover { color: #A5B4FC; }
+
+    /* Account filter chips */
+    .account-chips { display: flex; gap: 6px; padding: 10px 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; border-bottom: 1px solid rgba(148,163,184,.06); }
+    .account-chips::-webkit-scrollbar { display: none; }
+    .account-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(148,163,184,.15); background: transparent; color: #94A3B8; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; gap: 6px; transition: all .15s; }
+    .account-chip.active { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.15); color: #A5B4FC; }
+    .account-chip .acct-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .account-chip .remove-acct { margin-left: 2px; opacity: .5; cursor: pointer; display: flex; align-items: center; }
+    .account-chip .remove-acct:hover { opacity: 1; }
+
+    /* Connected accounts in sidebar */
+    .sidebar-accounts { padding: 8px 12px; }
+    .sidebar-acct { display: flex; align-items: center; gap: 8px; padding: 5px 4px; border-radius: 6px; font-size: 11px; color: #64748B; overflow: hidden; }
+    .sidebar-acct .sacct-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sidebar-acct span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .add-account-btn { width: 100%; padding: 7px 12px; background: transparent; border: 1px dashed rgba(148,163,184,.15); border-radius: 8px; color: #475569; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; margin-top: 4px; transition: all .15s; }
+    .add-account-btn:hover { border-color: rgba(99,102,241,.3); color: #A5B4FC; }
+
     @media (max-width: 767px) {
       .email-item { padding: 12px 16px; }
       .email-detail { padding: 16px; }
       .email-detail-subject { font-size: 16px; }
       .email-action-bar { flex-wrap: wrap; }
       .tab-btn { font-size: 12px; padding: 10px 8px; }
+      .account-chips { padding: 8px 16px; }
     }
   </style>
 </head>
@@ -147,6 +184,14 @@
 <div id="app"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
 <script>
+/* ─── Gmail Config ─── */
+const GMAIL_CLIENT_ID = "140814775397-qaadb25m8gg69gom7hq1igdehlgsjf1h.apps.googleusercontent.com";
+const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.labels";
+const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
+
+/* ─── Account Colors ─── */
+const ACCT_COLORS = ["#6366F1","#EC4899","#10B981","#F59E0B","#3B82F6","#8B5CF6","#EF4444","#06B6D4"];
+
 /* ─── State ─── */
 const state = {
   messages: [],
@@ -155,8 +200,13 @@ const state = {
   category: "all",
   sidebarOpen: false,
   installHint: true,
-  view: "chat", // "chat" | "email"
+  view: "chat",
   selectedEmail: null,
+  // Multi-account Gmail state
+  accounts: [],       // Array of { email, token, profile, emails[], color, loading, error }
+  activeFilter: "all", // "all" or an email address
+  tokenClient: null,
+  gmailLoading: false, // global loading for initial connect
 };
 
 /* ─── Data ─── */
@@ -188,64 +238,270 @@ const SUGGESTIONS = [
   { text:"Help me prepare a presentation outline", icon:"file-text" },
 ];
 
-const EMAILS = [
-  {
-    id: 1, unread: true, important: false,
-    from: "The Airtable Team", email: "team@mail.airtable.com",
-    subject: "Create the perfect Airtable database",
-    snippet: "Learn how to create data that works for you. Adding data the right way can set you up for long-term success...",
-    body: "Learn how to create data that works for you\n\nAdding data the right way can set you up for long-term success. The data your team is focused on should form the foundation of your workflow.\n\nHere are some tips to get started:\n\n• Start with your most critical data fields\n• Use field types that match your data (dates, numbers, links)\n• Set up views to filter and sort for different team needs\n• Connect related tables to eliminate duplicate data\n\nReady to build your perfect database? Get started today.",
-    date: "4:00 PM", label: "Promotions", labelColor: "#F59E0B", avatarColor: "#FBBF24"
-  },
-  {
-    id: 2, unread: true, important: true,
-    from: "HAR MLS", email: "HAR@mlsmatrix.com",
-    subject: "[Bergland, Jet] Properties for Sale in The Woodlands Area",
-    snippet: "Welcome to 'The Portal'! All messages containing listing information will be sent to you here...",
-    body: "Welcome to \"The Portal\"!\n\nAll messages I send to you containing listing information, whether they have been sent manually or through an automated search that I have created for you, will appear here.\n\nNew listings matching your criteria in The Woodlands Area are now available for review.\n\nPlease review the attached properties and let me know if any interest you for a showing.",
-    date: "3:37 PM", label: "Important", labelColor: "#EF4444", avatarColor: "#6366F1"
-  },
-  {
-    id: 3, unread: true, important: true,
-    from: "Aamir Saeed", email: "aamir@isotropicbuildingstudio.com",
-    subject: "Aamir Saeed favorited 4650 Fm 2351 Rd",
-    snippet: "Your Listing Is Getting Noticed! Your listing has been favorited by Aamir Saeed. Contact: aamir@isotropicbuildingstudio.com",
-    body: "Your Listing Is Getting Noticed!\n\nHi Saher,\n\nYour listing has been favorited by Aamir Saeed.\n\nBelow is the contact information if you would like to follow up:\n\naamir@isotropicbuildingstudio.com\n+1 347-687-XXXX\n\nAamir Saeed is interested in:\n4650 Fm 2351 Rd\n\nThis is a great opportunity to reach out and discuss the property details.",
-    date: "3:01 AM", label: "Lead", labelColor: "#10B981", avatarColor: "#10B981"
-  },
-  {
-    id: 4, unread: true, important: true,
-    from: "Bobby Ledford via DocuSign", email: "bobby.ledford@pulte.com",
-    subject: "Completed: 9003 18202 Moakley 11411 Mandolin Dr — Purchase Agreement",
-    snippet: "Your document has been completed. All parties have signed the New Home Purchase Agreement.",
-    body: "Your document has been completed.\n\nVIEW COMPLETED DOCUMENTS\n\nBobby Ledford (bobby.ledford@pulte.com)\n\nAll parties have completed signing:\n9003 18202 Moakley 11411 Mandolin Dr\nNew Home Purchase Agreement\n\nDo Not Share This Email — This email contains a secure link to DocuSign. Please do not share this email with others.\n\nAlternate Signing Method: Visit DocuSign.com, click 'Access Documents', enter security code.",
-    date: "Yesterday", label: "DocuSign", labelColor: "#6366F1", avatarColor: "#8B5CF6"
-  },
-  {
-    id: 5, unread: true, important: false,
-    from: "SkySlope", email: "noreply@skyslope.com",
-    subject: "Next steps: Please review & sign your buyer agreement",
-    snippet: "Here's the Buyer Agreement form for you to sign. It states that I'm your agent and sets clear agreements...",
-    body: "Saher Said has requested your signature.\n\nGet Started\n\nHi Saher,\n\nHere's the Buyer Agreement form for you to sign. It states that I'm your agent and sets clear agreements as we work to find your ideal property.\n\nPlease review and sign at your earliest convenience.\n\nThis document is time-sensitive.",
-    date: "Yesterday", label: "Action", labelColor: "#F59E0B", avatarColor: "#F59E0B"
-  },
-  {
-    id: 6, unread: true, important: false,
-    from: "Shelley Kellar (Riverway Title)", email: "SKellar@riverwaytitle.com",
-    subject: "Riverway Title | Down Payment Assistance & The Consumer | Wed. March 25",
-    snippet: "We would LOVE for you to join us! Down Payment Assistance workshop on March 25th...",
-    body: "We would LOVE for you to join us!\n\nDown Payment Assistance & The Consumer\nWednesday, March 25\n\nShelley Kellar\nBusiness Development\nDirect: 512-630-1196\nOffice: 281-640-2003\nSKellar@RiverwayTitle.com\n\n9709 Lakeside Blvd, Suite 118\nThe Woodlands, TX 77381\nwww.RiverwayTitle.com",
-    date: "Yesterday", label: "Event", labelColor: "#8B5CF6", avatarColor: "#EC4899"
-  },
-  {
-    id: 7, unread: true, important: false,
-    from: "Alison Wingate", email: "alison@modusrealestate.com",
-    subject: "Re: Big Growth in Austin Showings – See the Data!",
-    snippet: "Agents, Feel free to use these stats and information to pass along to your clients!",
-    body: "Agents,\n\nFeel free to use these stats and information to pass along to your clients!\n\nAustin showings are showing significant growth this quarter. Here are the key takeaways:\n\n• Showing activity up 18% month-over-month\n• Average days on market trending down\n• New listings inventory stabilizing\n\nUse this data to position your listings and educate buyers on market conditions.\n\nThank you!\nAlison Wingate\nModus Real Estate",
-    date: "Tue", label: "Team", labelColor: "#06B6D4", avatarColor: "#06B6D4"
-  },
-];
+const AVATAR_COLORS = ["#6366F1","#8B5CF6","#EC4899","#10B981","#F59E0B","#3B82F6","#EF4444","#06B6D4","#F97316","#14B8A6"];
+function avatarColor(name) { let h=0; for(let i=0;i<name.length;i++) h=name.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
+
+/* ─── Gmail API Functions ─── */
+function initGmailClient() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(initGmailClient, 500);
+    return;
+  }
+  state.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GMAIL_CLIENT_ID,
+    scope: GMAIL_SCOPES,
+    callback: handleGmailAuth,
+    prompt: '', // Will be set to 'consent' when adding new account
+  });
+}
+
+function connectGmail() {
+  if (!state.tokenClient) {
+    alert("Google sign-in is still loading. Please try again in a moment.");
+    return;
+  }
+  state.gmailLoading = true;
+  render();
+  // Force account chooser so user can pick a different account each time
+  state.tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function disconnectAccount(email) {
+  const idx = state.accounts.findIndex(a => a.email === email);
+  if (idx === -1) return;
+  const acct = state.accounts[idx];
+  if (acct.token) {
+    try { google.accounts.oauth2.revoke(acct.token); } catch(e) {}
+  }
+  state.accounts.splice(idx, 1);
+  if (state.activeFilter === email) state.activeFilter = "all";
+  render();
+}
+
+async function handleGmailAuth(tokenResponse) {
+  if (tokenResponse.error) {
+    state.gmailLoading = false;
+    render();
+    return;
+  }
+
+  const token = tokenResponse.access_token;
+
+  try {
+    // Fetch profile to get email address
+    const profileRes = await fetch(`${GMAIL_API}/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!profileRes.ok) throw new Error("Failed to fetch profile");
+    const profile = await profileRes.json();
+    const email = profile.emailAddress;
+
+    // Check if already connected
+    const existing = state.accounts.find(a => a.email === email);
+    if (existing) {
+      // Update token
+      existing.token = token;
+      existing.profile = profile;
+      state.gmailLoading = false;
+      await fetchAccountEmails(existing);
+      return;
+    }
+
+    // Create new account entry
+    const color = ACCT_COLORS[state.accounts.length % ACCT_COLORS.length];
+    const acct = {
+      email,
+      token,
+      profile,
+      emails: [],
+      color,
+      loading: true,
+      error: null,
+    };
+    state.accounts.push(acct);
+    state.gmailLoading = false;
+    render();
+
+    // Fetch emails for this account
+    await fetchAccountEmails(acct);
+  } catch (err) {
+    state.gmailLoading = false;
+    render();
+  }
+}
+
+async function fetchAccountEmails(acct) {
+  acct.loading = true;
+  acct.error = null;
+  render();
+
+  try {
+    const listRes = await fetch(`${GMAIL_API}/messages?maxResults=15&labelIds=INBOX`, {
+      headers: { Authorization: `Bearer ${acct.token}` }
+    });
+
+    if (!listRes.ok) {
+      if (listRes.status === 401) {
+        acct.error = "Session expired. Please reconnect.";
+        acct.loading = false;
+        render();
+        return;
+      }
+      throw new Error("Failed to fetch");
+    }
+
+    const listData = await listRes.json();
+    const messageIds = listData.messages || [];
+
+    const emails = await Promise.all(
+      messageIds.map(async (msg) => {
+        const res = await fetch(`${GMAIL_API}/messages/${msg.id}?format=full`, {
+          headers: { Authorization: `Bearer ${acct.token}` }
+        });
+        if (!res.ok) return null;
+        return res.json();
+      })
+    );
+
+    acct.emails = emails.filter(Boolean).map(m => parseGmailMessage(m, acct.email, acct.color));
+    acct.loading = false;
+    render();
+  } catch (err) {
+    acct.error = "Failed to load emails.";
+    acct.loading = false;
+    render();
+  }
+}
+
+function refreshAllEmails() {
+  state.accounts.forEach(acct => {
+    if (!acct.loading) fetchAccountEmails(acct);
+  });
+}
+
+function parseGmailMessage(msg, accountEmail, accountColor) {
+  const headers = msg.payload.headers || [];
+  const getHeader = (name) => {
+    const h = headers.find(h => h.name.toLowerCase() === name.toLowerCase());
+    return h ? h.value : "";
+  };
+
+  const from = getHeader("From");
+  const subject = getHeader("Subject") || "(no subject)";
+  const date = getHeader("Date");
+
+  let fromName = from;
+  let fromEmail = from;
+  const match = from.match(/^"?(.+?)"?\s*<(.+?)>$/);
+  if (match) {
+    fromName = match[1].replace(/"/g, '');
+    fromEmail = match[2];
+  }
+
+  let dateStr = "";
+  let dateObj = null;
+  try {
+    dateObj = new Date(date);
+    const now = new Date();
+    const diff = now - dateObj;
+    const oneDay = 86400000;
+    if (diff < oneDay && dateObj.getDate() === now.getDate()) {
+      dateStr = dateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } else if (diff < 2 * oneDay) {
+      dateStr = "Yesterday";
+    } else if (diff < 7 * oneDay) {
+      dateStr = dateObj.toLocaleDateString([], { weekday: "short" });
+    } else {
+      dateStr = dateObj.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+  } catch(e) { dateStr = date; }
+
+  let body = "";
+  function extractText(part) {
+    if (part.mimeType === "text/plain" && part.body && part.body.data) {
+      body += decodeBase64Url(part.body.data);
+    }
+    if (part.parts) part.parts.forEach(extractText);
+  }
+  extractText(msg.payload);
+  if (!body && msg.snippet) body = msg.snippet;
+
+  const snippet = msg.snippet || body.substring(0, 120);
+  const unread = (msg.labelIds || []).includes("UNREAD");
+  const important = (msg.labelIds || []).includes("IMPORTANT");
+
+  let label = "";
+  let labelColor = "#6366F1";
+  const labelIds = msg.labelIds || [];
+  if (labelIds.includes("CATEGORY_PROMOTIONS")) { label = "Promo"; labelColor = "#F59E0B"; }
+  else if (labelIds.includes("CATEGORY_UPDATES")) { label = "Updates"; labelColor = "#06B6D4"; }
+  else if (labelIds.includes("CATEGORY_SOCIAL")) { label = "Social"; labelColor = "#EC4899"; }
+  else if (labelIds.includes("CATEGORY_FORUMS")) { label = "Forums"; labelColor = "#8B5CF6"; }
+  else if (important) { label = "Important"; labelColor = "#EF4444"; }
+
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    accountEmail,
+    accountColor,
+    unread,
+    important,
+    from: fromName,
+    email: fromEmail,
+    subject,
+    snippet,
+    body,
+    date: dateStr,
+    dateObj,
+    label,
+    labelColor,
+    avatarColor: avatarColor(fromName),
+  };
+}
+
+function decodeBase64Url(data) {
+  try {
+    const str = data.replace(/-/g, '+').replace(/_/g, '/');
+    return decodeURIComponent(atob(str).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join(''));
+  } catch(e) {
+    try { return atob(data.replace(/-/g, '+').replace(/_/g, '/')); }
+    catch(e2) { return data; }
+  }
+}
+
+/* ─── Get all emails (unified) ─── */
+function getAllEmails() {
+  let all = [];
+  state.accounts.forEach(acct => {
+    all = all.concat(acct.emails);
+  });
+  // Sort by date descending
+  all.sort((a, b) => {
+    if (a.dateObj && b.dateObj) return b.dateObj - a.dateObj;
+    return 0;
+  });
+  return all;
+}
+
+function getFilteredEmails() {
+  const all = getAllEmails();
+  if (state.activeFilter === "all") return all;
+  return all.filter(e => e.accountEmail === state.activeFilter);
+}
+
+function getUnreadCount() {
+  return getAllEmails().filter(e => e.unread).length;
+}
+
+function findEmailById(id) {
+  for (const acct of state.accounts) {
+    const found = acct.emails.find(e => e.id === id);
+    if (found) return found;
+  }
+  return null;
+}
 
 /* ─── Helpers ─── */
 function greeting() { const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
@@ -253,6 +509,7 @@ function fmtTime(d) { return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-d
 function isMobile() { return window.innerWidth < 768; }
 function esc(s) { const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
 function boldify(text) { return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F1F5F9;font-weight:600">$1</strong>'); }
+function shortEmail(email) { const parts = email.split('@'); return parts[0].length > 10 ? parts[0].substring(0,10) + '...' : parts[0]; }
 
 function respond(msg) {
   const l = msg.toLowerCase();
@@ -268,8 +525,6 @@ function respond(msg) {
     return "Ready to help you write. I'll need:\n\n**1. Type** — Report, memo, proposal?\n**2. Audience** — Who reads this?\n**3. Key message** — Main takeaway?\n**4. Tone** — Formal, conversational, persuasive?\n**5. Length** — Rough target?\n\nShare these and I'll create a polished draft.";
   if (l.includes("brainstorm")||l.includes("idea"))
     return "Let's brainstorm! Tell me:\n\n• What problem are you solving?\n• Any constraints?\n• What's been tried before?\n\nI'll generate ideas from multiple angles — conventional, creative, and wild cards. What topic should we explore?";
-  if (l.includes("aamir")||l.includes("follow up")||l.includes("follow-up")||l.includes("4650"))
-    return "Here's a follow-up draft for the lead on your listing:\n\n**Subject:** Re: 4650 Fm 2351 Rd — Thank You for Your Interest\n\nHi Aamir,\n\nThank you for your interest in 4650 Fm 2351 Rd. I'd love to share more details about this property and answer any questions you might have.\n\nWould you be available for a quick call this week, or would you prefer to schedule a showing?\n\nLooking forward to connecting.\n\nBest regards,\nSaher Said\nModus Real Estate\n\nShall I adjust the tone or add any specific details?";
   return "I'm here to help! I can:\n\n• **Draft & refine** — emails, documents, presentations\n• **Research & analyze** — trends, data, competitive insights\n• **Plan & organize** — meetings, tasks, schedules\n• **Strategize** — brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
 }
 
@@ -279,7 +534,9 @@ function render() {
   const has = state.messages.length > 0;
   const filtered = state.category === "all" ? QUICK_ACTIONS : QUICK_ACTIONS.filter(a => a.cat === state.category);
   const today = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-  const unreadCount = EMAILS.filter(e => e.unread).length;
+  const unreadCount = getUnreadCount();
+  const hasAccounts = state.accounts.length > 0;
+  const anyLoading = state.accounts.some(a => a.loading) || state.gmailLoading;
 
   let html = "";
 
@@ -301,6 +558,16 @@ function render() {
   });
   html += `</div>`;
 
+  /* Connected accounts in sidebar */
+  html += `<div style="border-top:1px solid rgba(148,163,184,.1);padding:8px 12px">`;
+  html += `<div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;padding:4px 4px 6px">Accounts</div>`;
+  html += `<div class="sidebar-accounts">`;
+  state.accounts.forEach(acct => {
+    html += `<div class="sidebar-acct"><div class="sacct-dot" style="background:${acct.color}"></div><span>${esc(acct.email)}</span></div>`;
+  });
+  html += `<button class="add-account-btn" onclick="connectGmail()"><i data-lucide="plus" style="width:12px;height:12px"></i> Add account</button>`;
+  html += `</div></div>`;
+
   html += `<div style="padding:12px 16px;border-top:1px solid rgba(148,163,184,.1);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366F1,#EC4899);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">S</div><div><div style="font-size:13px;font-weight:600;color:#F1F5F9">Saher</div><div style="font-size:11px;color:#64748B">Modus Real Estate</div></div></div>`;
   html += `</div>`;
 
@@ -312,8 +579,11 @@ function render() {
   html += `<div style="display:flex;align-items:center;gap:10px">`;
   if (mob) html += `<button class="hamburger" onclick="openSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px;margin-right:4px"><i data-lucide="menu" style="width:20px;height:20px"></i></button>`;
   const viewIcon = state.view === "email" ? "mail" : "message-square";
-  const viewLabel = state.view === "email" ? (state.selectedEmail ? "Email" : "Inbox") : (has ? "Conversation" : "Home");
+  const viewLabel = state.view === "email" ? (state.selectedEmail ? "Email" : "Unified Inbox") : (has ? "Conversation" : "Home");
   html += `<i data-lucide="${viewIcon}" style="width:18px;height:18px;color:#6366F1"></i><span style="font-weight:600;font-size:15px;color:#F1F5F9">${viewLabel}</span>`;
+  if (state.view === "email" && hasAccounts) {
+    html += `<span style="font-size:12px;color:#475569;margin-left:4px">${state.accounts.length} account${state.accounts.length>1?'s':''}</span>`;
+  }
   html += `</div>`;
   html += `<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22C55E"></div><span style="font-size:12px;color:#64748B">Online</span></div>`;
   html += `</div>`;
@@ -333,7 +603,7 @@ function render() {
     html += renderChatView(mob, has, filtered, today);
   }
 
-  html += `</div>`; // end content
+  html += `</div>`;
 
   /* Input bar (chat only) */
   if (state.view === "chat") {
@@ -346,7 +616,7 @@ function render() {
     html += `</div></div>`;
   }
 
-  html += `</div>`; // end main
+  html += `</div>`;
 
   document.getElementById("app").innerHTML = `<div class="shell">${html}</div>`;
   lucide.createIcons();
@@ -360,9 +630,28 @@ function render() {
 
 function renderEmailView(mob) {
   let html = "";
+  const hasAccounts = state.accounts.length > 0;
 
+  // No accounts connected — show connect screen
+  if (!hasAccounts && !state.gmailLoading) {
+    html += `<div class="gmail-connect">`;
+    html += `<div class="gmail-connect-icon"><i data-lucide="mail" style="width:28px;height:28px;color:#A5B4FC"></i></div>`;
+    html += `<h2>Connect Your Gmail Accounts</h2>`;
+    html += `<p>Sign in with Google to view all your inboxes in one unified view. You can add multiple accounts.</p>`;
+    html += `<button class="gmail-connect-btn" onclick="connectGmail()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Sign in with Google</button>`;
+    html += `</div>`;
+    return html;
+  }
+
+  // Global loading (first account connecting)
+  if (state.gmailLoading && !hasAccounts) {
+    html += `<div class="email-loading"><div class="spinner"></div><div style="font-size:14px;color:#94A3B8">Connecting your account...</div></div>`;
+    return html;
+  }
+
+  // Show email detail
   if (state.selectedEmail !== null) {
-    const e = EMAILS.find(em => em.id === state.selectedEmail);
+    const e = findEmailById(state.selectedEmail);
     if (!e) return "";
     const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
@@ -372,34 +661,96 @@ function renderEmailView(mob) {
     html += `<div class="email-detail-subject">${esc(e.subject)}</div>`;
     html += `<div class="email-detail-meta">`;
     html += `<div class="email-detail-avatar" style="background:${e.avatarColor}">${initials}</div>`;
-    html += `<div><div style="font-size:14px;font-weight:600;color:#F1F5F9">${esc(e.from)}</div><div style="font-size:12px;color:#64748B">${esc(e.email)} · ${e.date}</div></div>`;
+    html += `<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#F1F5F9">${esc(e.from)}</div><div style="font-size:12px;color:#64748B">${esc(e.email)} · ${e.date}</div></div>`;
+    html += `<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:${e.accountColor}"></div><span style="font-size:10px;color:#475569">${shortEmail(e.accountEmail)}</span></div>`;
     html += `</div></div>`;
     if (e.label) html += `<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor};margin-bottom:12px">${e.label}</span>`;
     html += `<div class="email-detail-body">${esc(e.body)}</div>`;
     html += `<div class="email-action-bar">`;
-    html += `<button class="email-action-btn primary" onclick="replyToEmail(${e.id})"><i data-lucide="corner-up-left" style="width:14px;height:14px"></i> Reply</button>`;
-    html += `<button class="email-action-btn" onclick="draftFollowUp(${e.id})"><i data-lucide="pen-tool" style="width:14px;height:14px"></i> AI Draft</button>`;
+    html += `<button class="email-action-btn primary" onclick="replyToEmail('${e.id}')"><i data-lucide="corner-up-left" style="width:14px;height:14px"></i> Reply</button>`;
+    html += `<button class="email-action-btn" onclick="draftFollowUp('${e.id}')"><i data-lucide="pen-tool" style="width:14px;height:14px"></i> AI Draft</button>`;
     html += `<button class="email-action-btn"><i data-lucide="forward" style="width:14px;height:14px"></i> Forward</button>`;
     html += `</div></div>`;
-  } else {
-    /* Inbox header */
-    html += `<div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between">`;
-    html += `<div><span style="font-size:15px;font-weight:600;color:#F1F5F9">Inbox</span><span style="font-size:12px;color:#64748B;margin-left:8px">saher@modusrealestate.com</span></div>`;
-    html += `<div style="font-size:11px;color:#475569">${EMAILS.filter(e=>e.unread).length} unread</div>`;
-    html += `</div>`;
-
-    EMAILS.forEach(e => {
-      const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-      html += `<div class="email-item ${e.unread?'unread':''}" onclick="openEmail(${e.id})">`;
-      html += `<div class="email-dot ${e.unread?'':'read'}"></div>`;
-      html += `<div style="width:32px;height:32px;border-radius:8px;background:${e.avatarColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0">${initials}</div>`;
-      html += `<div class="email-body">`;
-      html += `<div class="email-header"><span class="email-from">${esc(e.from)}</span><span class="email-date">${e.date}</span></div>`;
-      html += `<div class="email-subject">${e.label?`<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor}">${e.label}</span>`:''}${esc(e.subject)}</div>`;
-      html += `<div class="email-snippet">${esc(e.snippet)}</div>`;
-      html += `</div></div>`;
-    });
+    return html;
   }
+
+  /* ─── Inbox list view ─── */
+
+  /* Header */
+  html += `<div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between">`;
+  html += `<div style="display:flex;align-items:center;gap:8px">`;
+  html += `<span style="font-size:15px;font-weight:600;color:#F1F5F9">Unified Inbox</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;align-items:center;gap:10px">`;
+  const totalUnread = getAllEmails().filter(e=>e.unread).length;
+  if (totalUnread) html += `<span style="font-size:11px;color:#475569">${totalUnread} unread</span>`;
+  html += `<button class="refresh-btn" onclick="refreshAllEmails()" title="Refresh all"><i data-lucide="refresh-cw" style="width:15px;height:15px"></i></button>`;
+  html += `<button class="gmail-connect-btn" onclick="connectGmail()" style="padding:6px 14px;font-size:12px;border-radius:8px"><i data-lucide="plus" style="width:13px;height:13px"></i> Add</button>`;
+  html += `</div></div>`;
+
+  /* Account filter chips */
+  if (state.accounts.length > 1) {
+    html += `<div class="account-chips">`;
+    html += `<button class="account-chip ${state.activeFilter==='all'?'active':''}" onclick="setAccountFilter('all')">All inboxes</button>`;
+    state.accounts.forEach(acct => {
+      const name = acct.email.split('@')[0];
+      const isActive = state.activeFilter === acct.email;
+      html += `<button class="account-chip ${isActive?'active':''}" onclick="setAccountFilter('${esc(acct.email)}')">`;
+      html += `<div class="acct-dot" style="background:${acct.color}"></div>`;
+      html += `${esc(name)}@${esc(acct.email.split('@')[1])}`;
+      html += `<span class="remove-acct" onclick="event.stopPropagation();disconnectAccount('${esc(acct.email)}')" title="Disconnect"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+      html += `</button>`;
+    });
+    html += `</div>`;
+  } else if (state.accounts.length === 1) {
+    html += `<div style="padding:6px 20px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,.06)">`;
+    html += `<div style="width:6px;height:6px;border-radius:50%;background:${state.accounts[0].color}"></div>`;
+    html += `<span style="font-size:12px;color:#64748B">${esc(state.accounts[0].email)}</span>`;
+    html += `<button onclick="disconnectAccount('${esc(state.accounts[0].email)}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:11px;margin-left:auto;padding:2px 6px" title="Disconnect"><i data-lucide="log-out" style="width:12px;height:12px"></i></button>`;
+    html += `</div>`;
+  }
+
+  /* Loading indicator for any account */
+  const loadingAccts = state.accounts.filter(a => a.loading);
+  if (loadingAccts.length > 0) {
+    html += `<div style="padding:12px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(148,163,184,.06)">`;
+    html += `<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>`;
+    html += `<span style="font-size:12px;color:#94A3B8">Loading emails from ${loadingAccts.map(a=>a.email.split('@')[0]).join(', ')}...</span>`;
+    html += `</div>`;
+  }
+
+  /* Error indicators */
+  state.accounts.forEach(acct => {
+    if (acct.error) {
+      html += `<div style="margin:8px 20px;padding:8px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:8px;font-size:12px;color:#FCA5A5;display:flex;align-items:center;gap:8px">`;
+      html += `<div style="width:6px;height:6px;border-radius:50%;background:${acct.color};flex-shrink:0"></div>`;
+      html += `${esc(acct.email)}: ${esc(acct.error)}`;
+      html += `</div>`;
+    }
+  });
+
+  /* Email list */
+  const emails = getFilteredEmails();
+  if (emails.length === 0 && !loadingAccts.length) {
+    html += `<div style="padding:40px;text-align:center;color:#64748B;font-size:14px">No emails found.</div>`;
+  }
+
+  emails.forEach(e => {
+    const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    html += `<div class="email-item ${e.unread?'unread':''}" onclick="openEmail('${e.id}')">`;
+    html += `<div class="email-dot ${e.unread?'':'read'}"></div>`;
+    html += `<div style="position:relative;flex-shrink:0"><div style="width:32px;height:32px;border-radius:8px;background:${e.avatarColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">${initials}</div>`;
+    // Account color indicator dot on avatar
+    if (state.accounts.length > 1) {
+      html += `<div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:${e.accountColor};border:2px solid #0F172A"></div>`;
+    }
+    html += `</div>`;
+    html += `<div class="email-body">`;
+    html += `<div class="email-header"><span class="email-from">${esc(e.from)}</span><span class="email-date">${e.date}</span></div>`;
+    html += `<div class="email-subject">${e.label?`<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor}">${e.label}</span>`:''}${esc(e.subject)}</div>`;
+    html += `<div class="email-snippet">${esc(e.snippet)}</div>`;
+    html += `</div></div>`;
+  });
 
   return html;
 }
@@ -461,16 +812,19 @@ function dismissInstall() { state.installHint=false; render(); }
 function switchView(v) { state.view=v; state.selectedEmail=null; render(); }
 function openEmail(id) { state.selectedEmail=id; render(); }
 function backToInbox() { state.selectedEmail=null; render(); }
+function setAccountFilter(f) { state.activeFilter=f; render(); }
 
 function replyToEmail(id) {
-  const e = EMAILS.find(em=>em.id===id);
+  const e = findEmailById(id);
+  if (!e) return;
   state.view = "chat";
   state.selectedEmail = null;
   sendMsg("Help me reply to the email from " + e.from + " about: " + e.subject);
 }
 
 function draftFollowUp(id) {
-  const e = EMAILS.find(em=>em.id===id);
+  const e = findEmailById(id);
+  if (!e) return;
   state.view = "chat";
   state.selectedEmail = null;
   sendMsg("Draft a follow-up email to " + e.from + " (" + e.email + ") regarding: " + e.subject);
@@ -512,6 +866,7 @@ function sendMsg(text) {
 /* ─── Init ─── */
 window.addEventListener("resize", render);
 render();
+initGmailClient();
 if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
 </script>
 </body>

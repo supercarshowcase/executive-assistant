@@ -1,4 +1,4 @@
-const CACHE = "exec-ai-v1";
+const CACHE = "exec-ai-v2";
 const ASSETS = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -16,6 +16,11 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
+  // Always go to network for API calls and Google auth
+  if (e.request.url.includes("googleapis.com") || e.request.url.includes("accounts.google.com")) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
       const clone = resp.clone();
