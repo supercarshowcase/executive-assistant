@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0F172A" />
+  <meta name="description" content="Executive AI Assistant for Saher" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Executive AI — Saher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #app { height: 100%; overflow: hidden; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0F172A; color: #E2E8F0; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    input, textarea, button { font-family: inherit; }
+    textarea { -webkit-text-size-adjust: 100%; }
+
+    .shell { display: flex; height: 100vh; }
+    .sidebar { width: 260px; background: linear-gradient(180deg,#1E293B,#0F172A); border-right: 1px solid #1E293B; display: flex; flex-direction: column; flex-shrink: 0; transition: transform .28s cubic-bezier(.4,0,.2,1); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); z-index: 40; }
+    .overlay.open { display: block; }
+    @media (max-width: 767px) {
+      .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; transform: translateX(-100%); box-shadow: 4px 0 24px rgba(0,0,0,.5); width: 280px; }
+      .sidebar.open { transform: translateX(0); }
+    }
+    @media (min-width: 768px) {
+      .overlay { display: none !important; }
+      .hamburger { display: none !important; }
+    }
+
+    .topbar { padding: 14px 28px; border-bottom: 1px solid #1E293B; display: flex; align-items: center; justify-content: space-between; background: rgba(15,23,42,.85); backdrop-filter: blur(12px); flex-shrink: 0; }
+    .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .inputbar { padding: 16px 28px 20px; border-top: 1px solid #1E293B; background: rgba(15,23,42,.9); backdrop-filter: blur(12px); flex-shrink: 0; }
+
+    @media (max-width: 767px) {
+      .topbar { padding: 12px 16px; }
+      .inputbar { padding: 10px 12px 14px; }
+      .content-inner { padding: 20px 16px !important; }
+      .msg-bubble { max-width: 85% !important; font-size: 13px !important; }
+      .greeting-title { font-size: 22px !important; }
+      .actions-grid { grid-template-columns: repeat(2,1fr) !important; }
+      .suggestions-grid { grid-template-columns: 1fr !important; }
+    }
+
+    .install-hint { margin: 12px 16px 0; padding: 10px 14px; background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.25); border-radius: 10px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: #A5B4FC; }
+
+    .chips { display: none; gap: 6px; overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    @media (max-width: 767px) { .chips { display: flex; } }
+    .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(148,163,184,.15); background: transparent; color: #94A3B8; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .chip.active { border-color: rgba(99,102,241,.4); background: rgba(99,102,241,.15); color: #A5B4FC; }
+
+    .sidebar-btn { width: 100%; padding: 10px 12px; background: transparent; border: none; border-radius: 8px; color: #94A3B8; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 2px; text-align: left; }
+    .sidebar-btn.active { background: rgba(99,102,241,.15); color: #A5B4FC; font-weight: 500; }
+    .sidebar-btn:hover { background: rgba(148,163,184,.08); }
+    .sidebar-btn.active:hover { background: rgba(99,102,241,.2); }
+
+    .suggestion-btn { padding: 14px 16px; background: rgba(30,41,59,.6); border: 1px solid rgba(148,163,184,.1); border-radius: 12px; color: #CBD5E1; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 13px; text-align: left; line-height: 1.4; -webkit-tap-highlight-color: transparent; transition: background .15s, border-color .15s; }
+    .suggestion-btn:hover { background: rgba(99,102,241,.1); border-color: rgba(99,102,241,.3); }
+
+    .action-btn { padding: 16px 12px; background: rgba(30,41,59,.6); border: 1px solid rgba(148,163,184,.08); border-radius: 12px; color: #CBD5E1; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; text-align: center; -webkit-tap-highlight-color: transparent; transition: background .15s, border-color .15s, transform .15s; }
+    .action-btn:hover { background: rgba(30,41,59,.9); transform: translateY(-2px); }
+
+    .icon-circle { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+
+    .dots { display: flex; gap: 4px; padding: 4px 0; align-items: center; }
+    .dots span { width: 6px; height: 6px; border-radius: 50%; background: #94A3B8; animation: bounce 1.4s ease-in-out infinite both; }
+    .dots span:nth-child(2) { animation-delay: .16s; }
+    .dots span:nth-child(3) { animation-delay: .32s; }
+    @keyframes bounce { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1);opacity:1} }
+
+    .avatar { border-radius: 10px; background: linear-gradient(135deg,#6366F1,#8B5CF6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    .msg-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-bubble { max-width: 80%; padding: 12px 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .msg-bubble.user { border-radius: 16px 16px 4px 16px; background: linear-gradient(135deg,#4F46E5,#6366F1); color: #F8FAFC; }
+    .msg-bubble.assistant { border-radius: 16px 16px 16px 4px; background: rgba(30,41,59,.8); border: 1px solid rgba(148,163,184,.1); color: #CBD5E1; }
+    .msg-bubble strong { color: #F1F5F9; font-weight: 600; }
+    .msg-time { font-size: 10px; margin-top: 6px; }
+    .msg-time.user { color: rgba(255,255,255,.5); text-align: right; }
+    .msg-time.assistant { color: #475569; }
+
+    .send-wrap { display: flex; align-items: flex-end; gap: 8px; background: rgba(30,41,59,.8); border: 1px solid rgba(148,163,184,.15); border-radius: 14px; padding: 4px 4px 4px 14px; }
+    .send-wrap:focus-within { border-color: rgba(99,102,241,.4); }
+    .send-input { flex: 1; background: transparent; border: none; outline: none; color: #E2E8F0; font-size: 14px; resize: none; padding: 10px 0; line-height: 1.5; max-height: 120px; overflow-y: auto; }
+    @media (max-width: 767px) { .send-input { font-size: 16px; } }
+    .send-btn { width: 40px; height: 40px; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; transition: background .15s; }
+    .send-btn.active { background: linear-gradient(135deg,#6366F1,#8B5CF6); }
+    .send-btn.inactive { background: rgba(148,163,184,.1); cursor: default; }
+
+    /* Tab bar */
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid #1E293B; background: rgba(15,23,42,.6); flex-shrink: 0; }
+    .tab-btn { flex: 1; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; color: #64748B; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s; }
+    .tab-btn.active { color: #A5B4FC; border-bottom-color: #6366F1; }
+    .tab-btn:hover { color: #CBD5E1; }
+    .tab-btn .badge { background: #EF4444; color: white; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+
+    /* Email styles */
+    .email-item { padding: 14px 20px; border-bottom: 1px solid rgba(148,163,184,.06); cursor: pointer; transition: background .12s; display: flex; gap: 12px; }
+    .email-item:hover { background: rgba(99,102,241,.06); }
+    .email-item.unread .email-subject { color: #F1F5F9; font-weight: 600; }
+    .email-item.unread .email-from { color: #E2E8F0; font-weight: 600; }
+    .email-dot { width: 8px; height: 8px; border-radius: 50%; background: #6366F1; flex-shrink: 0; margin-top: 6px; }
+    .email-dot.read { background: transparent; }
+    .email-body { flex: 1; min-width: 0; }
+    .email-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+    .email-from { font-size: 13px; color: #94A3B8; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .email-date { font-size: 11px; color: #475569; flex-shrink: 0; }
+    .email-subject { font-size: 13px; color: #94A3B8; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .email-snippet { font-size: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .email-label { display: inline-block; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; }
+
+    /* Email detail view */
+    .email-detail { padding: 24px 20px; }
+    .email-detail-header { margin-bottom: 20px; }
+    .email-detail-subject { font-size: 18px; font-weight: 700; color: #F8FAFC; margin-bottom: 12px; line-height: 1.3; }
+    .email-detail-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .email-detail-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; }
+    .email-detail-body { font-size: 14px; line-height: 1.7; color: #CBD5E1; white-space: pre-wrap; }
+    .email-action-bar { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(148,163,184,.1); }
+    .email-action-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(148,163,184,.15); background: rgba(30,41,59,.6); color: #CBD5E1; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .15s; }
+    .email-action-btn:hover { background: rgba(99,102,241,.1); border-color: rgba(99,102,241,.3); }
+    .email-action-btn.primary { background: rgba(99,102,241,.15); border-color: rgba(99,102,241,.3); color: #A5B4FC; }
+    .back-btn { background: none; border: none; color: #94A3B8; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 16px; padding: 4px 0; }
+    .back-btn:hover { color: #E2E8F0; }
+
+    @media (max-width: 767px) {
+      .email-item { padding: 12px 16px; }
+      .email-detail { padding: 16px; }
+      .email-detail-subject { font-size: 16px; }
+      .email-action-bar { flex-wrap: wrap; }
+      .tab-btn { font-size: 12px; padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+<script>
+/* ─── State ─── */
+const state = {
+  messages: [],
+  input: "",
+  typing: false,
+  category: "all",
+  sidebarOpen: false,
+  installHint: true,
+  view: "chat", // "chat" | "email"
+  selectedEmail: null,
+};
+
+/* ─── Data ─── */
+const CATEGORIES = [
+  { id:"all", label:"All", icon:"sparkles" },
+  { id:"email", label:"Email & Comms", icon:"mail" },
+  { id:"calendar", label:"Scheduling", icon:"calendar" },
+  { id:"research", label:"Research", icon:"search" },
+  { id:"tasks", label:"Tasks", icon:"check-square" },
+  { id:"writing", label:"Writing", icon:"pen-tool" },
+  { id:"analysis", label:"Analysis", icon:"bar-chart-3" },
+];
+
+const QUICK_ACTIONS = [
+  { label:"Draft an email", prompt:"Help me draft a professional email to", icon:"mail", cat:"email", color:"#3B82F6" },
+  { label:"Prep for meeting", prompt:"Help me prepare for my upcoming meeting about", icon:"calendar", cat:"calendar", color:"#8B5CF6" },
+  { label:"Research topic", prompt:"I need research and analysis on", icon:"globe", cat:"research", color:"#10B981" },
+  { label:"Create to-do list", prompt:"Help me organize my tasks for", icon:"check-square", cat:"tasks", color:"#F59E0B" },
+  { label:"Write document", prompt:"Help me write a", icon:"file-text", cat:"writing", color:"#EC4899" },
+  { label:"Analyze data", prompt:"Help me analyze and summarize", icon:"trending-up", cat:"analysis", color:"#06B6D4" },
+  { label:"Summarize content", prompt:"Summarize the following for me:", icon:"book-open", cat:"research", color:"#6366F1" },
+  { label:"Brainstorm ideas", prompt:"Help me brainstorm ideas for", icon:"lightbulb", cat:"all", color:"#F97316" },
+];
+
+const SUGGESTIONS = [
+  { text:"Review my priorities for today", icon:"target" },
+  { text:"Draft a follow-up email after a client meeting", icon:"mail" },
+  { text:"Summarize key trends in my industry", icon:"trending-up" },
+  { text:"Help me prepare a presentation outline", icon:"file-text" },
+];
+
+const EMAILS = [
+  {
+    id: 1, unread: true, important: false,
+    from: "The Airtable Team", email: "team@mail.airtable.com",
+    subject: "Create the perfect Airtable database",
+    snippet: "Learn how to create data that works for you. Adding data the right way can set you up for long-term success...",
+    body: "Learn how to create data that works for you\n\nAdding data the right way can set you up for long-term success. The data your team is focused on should form the foundation of your workflow.\n\nHere are some tips to get started:\n\n• Start with your most critical data fields\n• Use field types that match your data (dates, numbers, links)\n• Set up views to filter and sort for different team needs\n• Connect related tables to eliminate duplicate data\n\nReady to build your perfect database? Get started today.",
+    date: "4:00 PM", label: "Promotions", labelColor: "#F59E0B", avatarColor: "#FBBF24"
+  },
+  {
+    id: 2, unread: true, important: true,
+    from: "HAR MLS", email: "HAR@mlsmatrix.com",
+    subject: "[Bergland, Jet] Properties for Sale in The Woodlands Area",
+    snippet: "Welcome to 'The Portal'! All messages containing listing information will be sent to you here...",
+    body: "Welcome to \"The Portal\"!\n\nAll messages I send to you containing listing information, whether they have been sent manually or through an automated search that I have created for you, will appear here.\n\nNew listings matching your criteria in The Woodlands Area are now available for review.\n\nPlease review the attached properties and let me know if any interest you for a showing.",
+    date: "3:37 PM", label: "Important", labelColor: "#EF4444", avatarColor: "#6366F1"
+  },
+  {
+    id: 3, unread: true, important: true,
+    from: "Aamir Saeed", email: "aamir@isotropicbuildingstudio.com",
+    subject: "Aamir Saeed favorited 4650 Fm 2351 Rd",
+    snippet: "Your Listing Is Getting Noticed! Your listing has been favorited by Aamir Saeed. Contact: aamir@isotropicbuildingstudio.com",
+    body: "Your Listing Is Getting Noticed!\n\nHi Saher,\n\nYour listing has been favorited by Aamir Saeed.\n\nBelow is the contact information if you would like to follow up:\n\naamir@isotropicbuildingstudio.com\n+1 347-687-XXXX\n\nAamir Saeed is interested in:\n4650 Fm 2351 Rd\n\nThis is a great opportunity to reach out and discuss the property details.",
+    date: "3:01 AM", label: "Lead", labelColor: "#10B981", avatarColor: "#10B981"
+  },
+  {
+    id: 4, unread: true, important: true,
+    from: "Bobby Ledford via DocuSign", email: "bobby.ledford@pulte.com",
+    subject: "Completed: 9003 18202 Moakley 11411 Mandolin Dr — Purchase Agreement",
+    snippet: "Your document has been completed. All parties have signed the New Home Purchase Agreement.",
+    body: "Your document has been completed.\n\nVIEW COMPLETED DOCUMENTS\n\nBobby Ledford (bobby.ledford@pulte.com)\n\nAll parties have completed signing:\n9003 18202 Moakley 11411 Mandolin Dr\nNew Home Purchase Agreement\n\nDo Not Share This Email — This email contains a secure link to DocuSign. Please do not share this email with others.\n\nAlternate Signing Method: Visit DocuSign.com, click 'Access Documents', enter security code.",
+    date: "Yesterday", label: "DocuSign", labelColor: "#6366F1", avatarColor: "#8B5CF6"
+  },
+  {
+    id: 5, unread: true, important: false,
+    from: "SkySlope", email: "noreply@skyslope.com",
+    subject: "Next steps: Please review & sign your buyer agreement",
+    snippet: "Here's the Buyer Agreement form for you to sign. It states that I'm your agent and sets clear agreements...",
+    body: "Saher Said has requested your signature.\n\nGet Started\n\nHi Saher,\n\nHere's the Buyer Agreement form for you to sign. It states that I'm your agent and sets clear agreements as we work to find your ideal property.\n\nPlease review and sign at your earliest convenience.\n\nThis document is time-sensitive.",
+    date: "Yesterday", label: "Action", labelColor: "#F59E0B", avatarColor: "#F59E0B"
+  },
+  {
+    id: 6, unread: true, important: false,
+    from: "Shelley Kellar (Riverway Title)", email: "SKellar@riverwaytitle.com",
+    subject: "Riverway Title | Down Payment Assistance & The Consumer | Wed. March 25",
+    snippet: "We would LOVE for you to join us! Down Payment Assistance workshop on March 25th...",
+    body: "We would LOVE for you to join us!\n\nDown Payment Assistance & The Consumer\nWednesday, March 25\n\nShelley Kellar\nBusiness Development\nDirect: 512-630-1196\nOffice: 281-640-2003\nSKellar@RiverwayTitle.com\n\n9709 Lakeside Blvd, Suite 118\nThe Woodlands, TX 77381\nwww.RiverwayTitle.com",
+    date: "Yesterday", label: "Event", labelColor: "#8B5CF6", avatarColor: "#EC4899"
+  },
+  {
+    id: 7, unread: true, important: false,
+    from: "Alison Wingate", email: "alison@modusrealestate.com",
+    subject: "Re: Big Growth in Austin Showings – See the Data!",
+    snippet: "Agents, Feel free to use these stats and information to pass along to your clients!",
+    body: "Agents,\n\nFeel free to use these stats and information to pass along to your clients!\n\nAustin showings are showing significant growth this quarter. Here are the key takeaways:\n\n• Showing activity up 18% month-over-month\n• Average days on market trending down\n• New listings inventory stabilizing\n\nUse this data to position your listings and educate buyers on market conditions.\n\nThank you!\nAlison Wingate\nModus Real Estate",
+    date: "Tue", label: "Team", labelColor: "#06B6D4", avatarColor: "#06B6D4"
+  },
+];
+
+/* ─── Helpers ─── */
+function greeting() { const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
+function fmtTime(d) { return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+function isMobile() { return window.innerWidth < 768; }
+function esc(s) { const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+function boldify(text) { return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F1F5F9;font-weight:600">$1</strong>'); }
+
+function respond(msg) {
+  const l = msg.toLowerCase();
+  if (l.includes("email")||l.includes("draft"))
+    return "I'd be happy to help you draft that email. Here's a professional template:\n\n**Subject:** [Topic]\n\nDear [Recipient],\n\nI hope this message finds you well. I'm reaching out regarding [purpose].\n\n[Key points to cover]\n\nPlease let me know if you'd like to discuss further.\n\nBest regards,\nSaher\n\nWould you like me to customize this? Share the recipient, subject, and key points.";
+  if (l.includes("meeting")||l.includes("prep")||l.includes("schedule"))
+    return "Here's your meeting prep framework:\n\n**1. Objective** — Define the key outcome\n**2. Agenda** — 3-5 discussion points with time\n**3. Background** — Key data and context\n**4. Questions** — 2-3 strategic questions\n**5. Action items** — Expected next steps\n\nShare the meeting topic and I'll build a detailed prep brief.";
+  if (l.includes("research")||l.includes("analyze")||l.includes("trend"))
+    return "I'll help with that research. To give you the best analysis:\n\n**1. Scope** — What specific aspect?\n**2. Depth** — Quick overview or deep dive?\n**3. Format** — Summary, bullets, or full report?\n**4. Audience** — Who will see this?\n\nI'll put together key findings, data points, and actionable insights.";
+  if (l.includes("task")||l.includes("to-do")||l.includes("todo")||l.includes("priorit"))
+    return "Let's organize your tasks:\n\n**Urgent & Important** — Do first\n• [Critical deadlines]\n\n**Important, Not Urgent** — Schedule\n• [Strategic work]\n\n**Urgent, Not Important** — Delegate\n• [Routine requests]\n\n**Neither** — Defer or eliminate\n\nTell me what's on your plate and I'll prioritize everything.";
+  if (l.includes("write")||l.includes("document")||l.includes("report"))
+    return "Ready to help you write. I'll need:\n\n**1. Type** — Report, memo, proposal?\n**2. Audience** — Who reads this?\n**3. Key message** — Main takeaway?\n**4. Tone** — Formal, conversational, persuasive?\n**5. Length** — Rough target?\n\nShare these and I'll create a polished draft.";
+  if (l.includes("brainstorm")||l.includes("idea"))
+    return "Let's brainstorm! Tell me:\n\n• What problem are you solving?\n• Any constraints?\n• What's been tried before?\n\nI'll generate ideas from multiple angles — conventional, creative, and wild cards. What topic should we explore?";
+  if (l.includes("aamir")||l.includes("follow up")||l.includes("follow-up")||l.includes("4650"))
+    return "Here's a follow-up draft for the lead on your listing:\n\n**Subject:** Re: 4650 Fm 2351 Rd — Thank You for Your Interest\n\nHi Aamir,\n\nThank you for your interest in 4650 Fm 2351 Rd. I'd love to share more details about this property and answer any questions you might have.\n\nWould you be available for a quick call this week, or would you prefer to schedule a showing?\n\nLooking forward to connecting.\n\nBest regards,\nSaher Said\nModus Real Estate\n\nShall I adjust the tone or add any specific details?";
+  return "I'm here to help! I can:\n\n• **Draft & refine** — emails, documents, presentations\n• **Research & analyze** — trends, data, competitive insights\n• **Plan & organize** — meetings, tasks, schedules\n• **Strategize** — brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
+}
+
+/* ─── Render ─── */
+function render() {
+  const mob = isMobile();
+  const has = state.messages.length > 0;
+  const filtered = state.category === "all" ? QUICK_ACTIONS : QUICK_ACTIONS.filter(a => a.cat === state.category);
+  const today = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+  const unreadCount = EMAILS.filter(e => e.unread).length;
+
+  let html = "";
+
+  /* Overlay */
+  html += `<div class="overlay ${state.sidebarOpen?'open':''}" onclick="closeSidebar()"></div>`;
+
+  /* Sidebar */
+  html += `<div class="sidebar ${state.sidebarOpen?'open':''}">`;
+  html += `<div style="padding:20px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between">`;
+  html += `<div style="display:flex;align-items:center;gap:12px"><div class="avatar" style="width:36px;height:36px"><i data-lucide="sparkles" style="width:18px;height:18px;color:white"></i></div><div><div style="font-weight:700;font-size:15px;color:#F8FAFC">Executive AI</div><div style="font-size:11px;color:#64748B">Your personal assistant</div></div></div>`;
+  if (mob) html += `<button onclick="closeSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px"><i data-lucide="x" style="width:20px;height:20px"></i></button>`;
+  html += `</div>`;
+
+  html += `<div style="padding:12px 16px"><button onclick="newChat()" style="width:100%;padding:10px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:#A5B4FC;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500"><i data-lucide="plus" style="width:16px;height:16px"></i> New Conversation</button></div>`;
+
+  html += `<div style="padding:4px 8px;flex:1;overflow-y:auto"><div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;padding:8px 12px 6px">Categories</div>`;
+  CATEGORIES.forEach(c => {
+    html += `<button class="sidebar-btn ${state.category===c.id?'active':''}" onclick="setCategory('${c.id}')"><i data-lucide="${c.icon}" style="width:16px;height:16px"></i> ${c.label}</button>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="padding:12px 16px;border-top:1px solid rgba(148,163,184,.1);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366F1,#EC4899);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">S</div><div><div style="font-size:13px;font-weight:600;color:#F1F5F9">Saher</div><div style="font-size:11px;color:#64748B">Modus Real Estate</div></div></div>`;
+  html += `</div>`;
+
+  /* Main */
+  html += `<div class="main">`;
+
+  /* Topbar */
+  html += `<div class="topbar">`;
+  html += `<div style="display:flex;align-items:center;gap:10px">`;
+  if (mob) html += `<button class="hamburger" onclick="openSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px;margin-right:4px"><i data-lucide="menu" style="width:20px;height:20px"></i></button>`;
+  const viewIcon = state.view === "email" ? "mail" : "message-square";
+  const viewLabel = state.view === "email" ? (state.selectedEmail ? "Email" : "Inbox") : (has ? "Conversation" : "Home");
+  html += `<i data-lucide="${viewIcon}" style="width:18px;height:18px;color:#6366F1"></i><span style="font-weight:600;font-size:15px;color:#F1F5F9">${viewLabel}</span>`;
+  html += `</div>`;
+  html += `<div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:#22C55E"></div><span style="font-size:12px;color:#64748B">Online</span></div>`;
+  html += `</div>`;
+
+  /* Tab bar */
+  html += `<div class="tab-bar">`;
+  html += `<button class="tab-btn ${state.view==='chat'?'active':''}" onclick="switchView('chat')"><i data-lucide="message-square" style="width:15px;height:15px"></i> Chat</button>`;
+  html += `<button class="tab-btn ${state.view==='email'?'active':''}" onclick="switchView('email')"><i data-lucide="mail" style="width:15px;height:15px"></i> Email ${unreadCount?`<span class="badge">${unreadCount}</span>`:''}</button>`;
+  html += `</div>`;
+
+  /* Content */
+  html += `<div class="content">`;
+
+  if (state.view === "email") {
+    html += renderEmailView(mob);
+  } else {
+    html += renderChatView(mob, has, filtered, today);
+  }
+
+  html += `</div>`; // end content
+
+  /* Input bar (chat only) */
+  if (state.view === "chat") {
+    const canSend = state.input.trim() && !state.typing;
+    html += `<div class="inputbar"><div style="max-width:720px;margin:0 auto">`;
+    html += `<div class="send-wrap"><textarea class="send-input" id="msg-input" rows="1" placeholder="${mob?'Ask me anything...':'Ask me anything — emails, meetings, research, tasks...'}" oninput="onInput(event)" onkeydown="onKey(event)">${esc(state.input)}</textarea>`;
+    html += `<button class="send-btn ${canSend?'active':'inactive'}" onclick="sendFromInput()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${canSend?'white':'#475569'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>`;
+    html += `</div>`;
+    if (!mob) html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:#334155">Executive AI Assistant — Always ready to help</div>`;
+    html += `</div></div>`;
+  }
+
+  html += `</div>`; // end main
+
+  document.getElementById("app").innerHTML = `<div class="shell">${html}</div>`;
+  lucide.createIcons();
+
+  const anchor = document.getElementById("scroll-anchor");
+  if (anchor) anchor.scrollIntoView({ behavior: "smooth" });
+
+  const inp = document.getElementById("msg-input");
+  if (inp) inp.value = state.input;
+}
+
+function renderEmailView(mob) {
+  let html = "";
+
+  if (state.selectedEmail !== null) {
+    const e = EMAILS.find(em => em.id === state.selectedEmail);
+    if (!e) return "";
+    const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+
+    html += `<div class="email-detail">`;
+    html += `<button class="back-btn" onclick="backToInbox()"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Back to Inbox</button>`;
+    html += `<div class="email-detail-header">`;
+    html += `<div class="email-detail-subject">${esc(e.subject)}</div>`;
+    html += `<div class="email-detail-meta">`;
+    html += `<div class="email-detail-avatar" style="background:${e.avatarColor}">${initials}</div>`;
+    html += `<div><div style="font-size:14px;font-weight:600;color:#F1F5F9">${esc(e.from)}</div><div style="font-size:12px;color:#64748B">${esc(e.email)} · ${e.date}</div></div>`;
+    html += `</div></div>`;
+    if (e.label) html += `<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor};margin-bottom:12px">${e.label}</span>`;
+    html += `<div class="email-detail-body">${esc(e.body)}</div>`;
+    html += `<div class="email-action-bar">`;
+    html += `<button class="email-action-btn primary" onclick="replyToEmail(${e.id})"><i data-lucide="corner-up-left" style="width:14px;height:14px"></i> Reply</button>`;
+    html += `<button class="email-action-btn" onclick="draftFollowUp(${e.id})"><i data-lucide="pen-tool" style="width:14px;height:14px"></i> AI Draft</button>`;
+    html += `<button class="email-action-btn"><i data-lucide="forward" style="width:14px;height:14px"></i> Forward</button>`;
+    html += `</div></div>`;
+  } else {
+    /* Inbox header */
+    html += `<div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between">`;
+    html += `<div><span style="font-size:15px;font-weight:600;color:#F1F5F9">Inbox</span><span style="font-size:12px;color:#64748B;margin-left:8px">saher@modusrealestate.com</span></div>`;
+    html += `<div style="font-size:11px;color:#475569">${EMAILS.filter(e=>e.unread).length} unread</div>`;
+    html += `</div>`;
+
+    EMAILS.forEach(e => {
+      const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+      html += `<div class="email-item ${e.unread?'unread':''}" onclick="openEmail(${e.id})">`;
+      html += `<div class="email-dot ${e.unread?'':'read'}"></div>`;
+      html += `<div style="width:32px;height:32px;border-radius:8px;background:${e.avatarColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0">${initials}</div>`;
+      html += `<div class="email-body">`;
+      html += `<div class="email-header"><span class="email-from">${esc(e.from)}</span><span class="email-date">${e.date}</span></div>`;
+      html += `<div class="email-subject">${e.label?`<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor}">${e.label}</span>`:''}${esc(e.subject)}</div>`;
+      html += `<div class="email-snippet">${esc(e.snippet)}</div>`;
+      html += `</div></div>`;
+    });
+  }
+
+  return html;
+}
+
+function renderChatView(mob, has, filtered, today) {
+  let html = `<div class="content-inner" style="max-width:720px;margin:0 auto;padding:${mob?'20px 16px':'48px 28px'}">`;
+
+  if (!has) {
+    if (mob && state.installHint) {
+      html += `<div class="install-hint"><i data-lucide="share" style="width:16px;height:16px;flex-shrink:0"></i><span style="flex:1">Tap <strong>Share → Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px"><i data-lucide="x" style="width:14px;height:14px"></i></button></div>`;
+    }
+
+    html += `<div style="margin-bottom:${mob?28:40}px">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i data-lucide="coffee" style="width:18px;height:18px;color:#F59E0B"></i><span style="font-size:12px;color:#F59E0B;font-weight:500">${today}</span></div>`;
+    html += `<h1 class="greeting-title" style="font-size:28px;font-weight:700;color:#F8FAFC;margin:0 0 6px;letter-spacing:-.02em">${greeting()}, Saher</h1>`;
+    html += `<p style="font-size:${mob?14:15}px;color:#94A3B8;margin:0;line-height:1.5">How can I help you today?</p></div>`;
+
+    html += `<div style="margin-bottom:${mob?28:36}px"><div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Suggestions</div>`;
+    html += `<div class="suggestions-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
+    SUGGESTIONS.forEach(s => {
+      html += `<button class="suggestion-btn" onclick="sendMsg('${esc(s.text)}')"><i data-lucide="${s.icon}" style="width:16px;height:16px;flex-shrink:0;color:#6366F1"></i><span style="flex:1">${esc(s.text)}</span><i data-lucide="arrow-right" style="width:14px;height:14px;flex-shrink:0;opacity:.4"></i></button>`;
+    });
+    html += `</div></div>`;
+
+    html += `<div><div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Quick Actions</div>`;
+    html += `<div class="chips">`;
+    CATEGORIES.forEach(c => {
+      html += `<button class="chip ${state.category===c.id?'active':''}" onclick="setCategory('${c.id}')">${c.label}</button>`;
+    });
+    html += `</div>`;
+    html += `<div class="actions-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">`;
+    filtered.forEach(a => {
+      html += `<button class="action-btn" onclick="fillInput('${esc(a.prompt)} ')"><div class="icon-circle" style="background:${a.color}18"><i data-lucide="${a.icon}" style="width:16px;height:16px;color:${a.color}"></i></div>${a.label}</button>`;
+    });
+    html += `</div></div>`;
+  } else {
+    state.messages.forEach(m => {
+      html += `<div class="msg-row ${m.role}">`;
+      if (m.role === "assistant") html += `<div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px;margin-top:2px"><i data-lucide="sparkles" style="width:${mob?13:15}px;height:${mob?13:15}px;color:white"></i></div>`;
+      html += `<div class="msg-bubble ${m.role}">${boldify(m.content)}<div class="msg-time ${m.role}">${fmtTime(m.time)}</div></div>`;
+      html += `</div>`;
+    });
+    if (state.typing) {
+      html += `<div class="msg-row"><div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px"><i data-lucide="sparkles" style="width:${mob?13:15}px;height:${mob?13:15}px;color:white"></i></div><div class="msg-bubble assistant"><div class="dots"><span></span><span></span><span></span></div></div></div>`;
+    }
+    html += `<div id="scroll-anchor"></div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+/* ─── Actions ─── */
+function openSidebar() { state.sidebarOpen=true; render(); }
+function closeSidebar() { state.sidebarOpen=false; render(); }
+function newChat() { state.messages=[]; state.sidebarOpen=false; state.view="chat"; render(); }
+function setCategory(id) { state.category=id; state.sidebarOpen=false; render(); }
+function dismissInstall() { state.installHint=false; render(); }
+function switchView(v) { state.view=v; state.selectedEmail=null; render(); }
+function openEmail(id) { state.selectedEmail=id; render(); }
+function backToInbox() { state.selectedEmail=null; render(); }
+
+function replyToEmail(id) {
+  const e = EMAILS.find(em=>em.id===id);
+  state.view = "chat";
+  state.selectedEmail = null;
+  sendMsg("Help me reply to the email from " + e.from + " about: " + e.subject);
+}
+
+function draftFollowUp(id) {
+  const e = EMAILS.find(em=>em.id===id);
+  state.view = "chat";
+  state.selectedEmail = null;
+  sendMsg("Draft a follow-up email to " + e.from + " (" + e.email + ") regarding: " + e.subject);
+}
+
+function fillInput(text) {
+  state.input = text; render();
+  const inp = document.getElementById("msg-input");
+  if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+}
+
+function onInput(e) {
+  state.input = e.target.value;
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+}
+
+function onKey(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendFromInput(); } }
+
+function sendFromInput() {
+  if (!state.input.trim() || state.typing) return;
+  sendMsg(state.input.trim());
+}
+
+function sendMsg(text) {
+  state.messages.push({ role: "user", content: text, time: new Date() });
+  state.input = "";
+  state.typing = true;
+  state.sidebarOpen = false;
+  state.view = "chat";
+  render();
+  setTimeout(() => {
+    state.messages.push({ role: "assistant", content: respond(text), time: new Date() });
+    state.typing = false;
+    render();
+  }, 700 + Math.random() * 1000);
+}
+
+/* ─── Init ─── */
+window.addEventListener("resize", render);
+render();
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
+</script>
+</body>
+</html>
