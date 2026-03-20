@@ -9,7 +9,7 @@
   <meta name="description" content="Executive AI Assistant for Saher" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>Executive AI — Saher</title>
+  <title>Executive AI â Saher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -169,6 +169,39 @@
     .add-account-btn { width: 100%; padding: 7px 12px; background: transparent; border: 1px dashed rgba(148,163,184,.15); border-radius: 8px; color: #475569; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; margin-top: 4px; transition: all .15s; }
     .add-account-btn:hover { border-color: rgba(99,102,241,.3); color: #A5B4FC; }
 
+    /* Inbox Cleaner */
+    .cleaner-overlay { position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:60;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .cleaner-panel { width:95%;max-width:640px;max-height:85vh;background:#1E293B;border:1px solid rgba(148,163,184,.15);border-radius:16px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5) }
+    .cleaner-header { padding:18px 20px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0 }
+    .cleaner-header h3 { font-size:16px;font-weight:700;color:#F8FAFC;display:flex;align-items:center;gap:10px }
+    .cleaner-stats { padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid rgba(148,163,184,.06);flex-shrink:0 }
+    .cleaner-stat { padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;background:rgba(99,102,241,.1);color:#A5B4FC }
+    .cleaner-list { flex:1;overflow-y:auto;padding:4px 0 }
+    .cleaner-item { padding:12px 20px;border-bottom:1px solid rgba(148,163,184,.04);display:flex;align-items:flex-start;gap:12px;transition:background .12s }
+    .cleaner-item:hover { background:rgba(99,102,241,.04) }
+    .cleaner-item.kept { opacity:.4 }
+    .cleaner-checkbox { width:18px;height:18px;border-radius:5px;border:2px solid rgba(148,163,184,.25);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .15s }
+    .cleaner-checkbox.checked { background:#6366F1;border-color:#6366F1 }
+    .cleaner-reason { display:inline-block;font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em }
+    .cleaner-actions { display:flex;gap:4px;margin-top:6px }
+    .cleaner-actions button { padding:4px 10px;border-radius:6px;border:1px solid rgba(148,163,184,.12);background:rgba(30,41,59,.8);color:#94A3B8;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s }
+    .cleaner-actions button:hover { background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:#A5B4FC }
+    .cleaner-actions button.selected-trash { background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3);color:#FCA5A5 }
+    .cleaner-actions button.selected-archive { background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#A5B4FC }
+    .cleaner-actions button.selected-keep { background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);color:#86EFAC }
+    .cleaner-footer { padding:14px 20px;border-top:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0 }
+    .cleaner-footer .bulk-select { display:flex;align-items:center;gap:8px;font-size:12px;color:#94A3B8 }
+    .cleaner-apply-btn { padding:8px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s }
+    .cleaner-apply-btn.active { background:linear-gradient(135deg,#4F46E5,#6366F1);color:white }
+    .cleaner-apply-btn.active:hover { transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.3) }
+    .cleaner-apply-btn.disabled { background:rgba(148,163,184,.1);color:#475569;cursor:default }
+    .cleaner-progress { padding:24px 20px;text-align:center }
+    .cleaner-progress-bar { width:100%;height:6px;background:rgba(148,163,184,.15);border-radius:3px;overflow:hidden;margin:12px 0 }
+    .cleaner-progress-fill { height:100%;background:linear-gradient(90deg,#6366F1,#8B5CF6);border-radius:3px;transition:width .3s ease }
+    .cleaner-empty { padding:48px 24px;text-align:center }
+    .cleaner-done { padding:32px 24px;text-align:center }
+
     .ic { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
     .ic svg { display: block; }
 
@@ -185,7 +218,7 @@
 <body>
 <div id="app"></div>
 <script>
-/* ─── Inline SVG Icons (no CDN dependency) ─── */
+/* âââ Inline SVG Icons (no CDN dependency) âââ */
 const ICONS = {
   sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
   x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
@@ -212,6 +245,10 @@ const ICONS = {
   "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
   coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  archive: '<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
 };
 
 function icon(name, size, color) {
@@ -222,15 +259,15 @@ function icon(name, size, color) {
     + `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span>`;
 }
 
-/* ─── Gmail Config ─── */
+/* âââ Gmail Config âââ */
 const GMAIL_CLIENT_ID = "140814775397-qaadb25m8gg69gom7hq1igdehlgsjf1h.apps.googleusercontent.com";
-const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.labels";
+const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.labels https://www.googleapis.com/auth/gmail.modify";
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
-/* ─── Account Colors ─── */
+/* âââ Account Colors âââ */
 const ACCT_COLORS = ["#6366F1","#EC4899","#10B981","#F59E0B","#3B82F6","#8B5CF6","#EF4444","#06B6D4"];
 
-/* ─── State ─── */
+/* âââ State âââ */
 const state = {
   messages: [],
   input: "",
@@ -245,9 +282,16 @@ const state = {
   activeFilter: "all", // "all" or an email address
   tokenClient: null,
   gmailLoading: false, // global loading for initial connect
+  // Inbox cleaner state
+  cleanerOpen: false,
+  cleanerLoading: false,
+  cleanerEmails: [],     // Array of { email, reason, category, action: null|"trash"|"archive"|"keep" }
+  cleanerProgress: null, // { done: N, total: N } during batch operations
+  cleanerDone: false,    // true when batch complete
+  cleanerResults: null,  // { trashed: N, archived: N, failed: N }
 };
 
-/* ─── Data ─── */
+/* âââ Data âââ */
 const CATEGORIES = [
   { id:"all", label:"All", icon:"sparkles" },
   { id:"email", label:"Email & Comms", icon:"mail" },
@@ -279,7 +323,7 @@ const SUGGESTIONS = [
 const AVATAR_COLORS = ["#6366F1","#8B5CF6","#EC4899","#10B981","#F59E0B","#3B82F6","#EF4444","#06B6D4","#F97316","#14B8A6"];
 function avatarColor(name) { let h=0; for(let i=0;i<name.length;i++) h=name.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
 
-/* ─── Gmail API Functions ─── */
+/* âââ Gmail API Functions âââ */
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
     if (typeof google !== 'undefined' && google.accounts) {
@@ -547,7 +591,7 @@ function decodeBase64Url(data) {
   }
 }
 
-/* ─── Get all emails (unified) ─── */
+/* âââ Get all emails (unified) âââ */
 function getAllEmails() {
   let all = [];
   state.accounts.forEach(acct => {
@@ -578,7 +622,7 @@ function findEmailById(id) {
   return null;
 }
 
-/* ─── Helpers ─── */
+/* âââ Helpers âââ */
 function greeting() { const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
 function fmtTime(d) { return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
 function isMobile() { return window.innerWidth < 768; }
@@ -586,24 +630,206 @@ function esc(s) { const d=document.createElement("div"); d.textContent=s; return
 function boldify(text) { return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F1F5F9;font-weight:600">$1</strong>'); }
 function shortEmail(email) { const parts = email.split('@'); return parts[0].length > 10 ? parts[0].substring(0,10) + '...' : parts[0]; }
 
+/* âââ Inbox Cleaner Logic âââ */
+const MARKETING_KEYWORDS = ['unsubscribe','newsletter','limited time','exclusive offer','promotion','manage preferences','opt out','sale ends','discount','deal of','weekly digest','monthly update','view in browser','view online','email preferences','no longer wish','manage subscriptions'];
+const MARKETING_DOMAINS = ['mailchimp.com','sendgrid.net','substack.com','constantcontact.com','mailgun.org','sendinblue.com','hubspot.com','klaviyo.com','campaign-archive.com','list-manage.com','mailerlite.com','convertkit.com','drip.com','aweber.com','getresponse.com','beehiiv.com'];
+
+function detectMarketingEmails(emails) {
+  const flagged = [];
+  emails.forEach(e => {
+    let reason = null;
+    let category = null;
+
+    // 1. Gmail category labels
+    if (e.label === 'Promo') { reason = 'Gmail Promotions'; category = 'promotions'; }
+    else if (e.label === 'Social') { reason = 'Gmail Social'; category = 'social'; }
+    else if (e.label === 'Forums') { reason = 'Gmail Forums'; category = 'forums'; }
+    else if (e.label === 'Updates') { reason = 'Gmail Updates'; category = 'updates'; }
+
+    // 2. Keyword analysis
+    if (!reason) {
+      const searchText = ((e.subject || '') + ' ' + (e.body || '') + ' ' + (e.snippet || '')).toLowerCase();
+      const found = MARKETING_KEYWORDS.filter(kw => searchText.includes(kw));
+      if (found.length >= 1) {
+        reason = 'Keywords: ' + found.slice(0,3).join(', ');
+        category = 'keywords';
+      }
+    }
+
+    // 3. Sender domain check
+    if (!reason) {
+      const senderDomain = (e.email || '').split('@')[1]?.toLowerCase() || '';
+      const matched = MARKETING_DOMAINS.find(d => senderDomain.includes(d));
+      if (matched) {
+        reason = 'Marketing platform: ' + matched;
+        category = 'platform';
+      }
+    }
+
+    if (reason) flagged.push({ email: e, reason, category, action: null });
+  });
+  return flagged;
+}
+
+async function fetchCleanerEmails() {
+  state.cleanerLoading = true;
+  state.cleanerEmails = [];
+  state.cleanerDone = false;
+  state.cleanerResults = null;
+  state.cleanerProgress = null;
+  render();
+
+  const allEmails = [];
+
+  for (const acct of state.accounts) {
+    try {
+      const listRes = await fetch(`${GMAIL_API}/messages?maxResults=100&labelIds=INBOX`, {
+        headers: { Authorization: `Bearer ${acct.token}` }
+      });
+      if (!listRes.ok) continue;
+      const listData = await listRes.json();
+      const messageIds = listData.messages || [];
+
+      // Fetch in parallel batches of 20
+      for (let i = 0; i < messageIds.length; i += 20) {
+        const batch = messageIds.slice(i, i + 20);
+        const results = await Promise.all(
+          batch.map(async msg => {
+            const res = await fetch(`${GMAIL_API}/messages/${msg.id}?format=full`, {
+              headers: { Authorization: `Bearer ${acct.token}` }
+            });
+            if (!res.ok) return null;
+            return res.json();
+          })
+        );
+        const parsed = results.filter(Boolean).map(m => parseGmailMessage(m, acct.email, acct.color));
+        allEmails.push(...parsed);
+      }
+    } catch (err) {
+      console.error('Cleaner fetch error:', acct.email, err);
+    }
+  }
+
+  state.cleanerEmails = detectMarketingEmails(allEmails);
+  state.cleanerLoading = false;
+  render();
+}
+
+async function trashEmail(id, token) {
+  const res = await fetch(`${GMAIL_API}/messages/${id}/trash`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.ok;
+}
+
+async function archiveEmail(id, token) {
+  const res = await fetch(`${GMAIL_API}/messages/${id}/modify`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ removeLabelIds: ['INBOX'] })
+  });
+  return res.ok;
+}
+
+async function applyCleanerActions() {
+  const actionable = state.cleanerEmails.filter(item => item.action === 'trash' || item.action === 'archive');
+  if (actionable.length === 0) return;
+
+  state.cleanerProgress = { done: 0, total: actionable.length };
+  render();
+
+  let trashed = 0, archived = 0, failed = 0;
+  const BATCH = 10;
+
+  for (let i = 0; i < actionable.length; i += BATCH) {
+    const batch = actionable.slice(i, i + BATCH);
+    const results = await Promise.all(batch.map(async item => {
+      const acct = state.accounts.find(a => a.email === item.email.accountEmail);
+      if (!acct) return false;
+      try {
+        if (item.action === 'trash') return await trashEmail(item.email.id, acct.token);
+        if (item.action === 'archive') return await archiveEmail(item.email.id, acct.token);
+      } catch(e) { return false; }
+      return false;
+    }));
+
+    results.forEach((ok, j) => {
+      if (ok) {
+        if (batch[j].action === 'trash') trashed++;
+        else archived++;
+      } else failed++;
+    });
+
+    state.cleanerProgress.done = Math.min(i + BATCH, actionable.length);
+    render();
+
+    if (i + BATCH < actionable.length) await new Promise(r => setTimeout(r, 100));
+  }
+
+  state.cleanerProgress = null;
+  state.cleanerDone = true;
+  state.cleanerResults = { trashed, archived, failed };
+  render();
+
+  // Refresh inbox after a short delay
+  setTimeout(() => { refreshAllEmails(); }, 500);
+}
+
+function openCleaner() {
+  if (state.accounts.length === 0) { alert('Please connect a Gmail account first.'); return; }
+  state.cleanerOpen = true;
+  state.cleanerDone = false;
+  state.cleanerResults = null;
+  state.cleanerProgress = null;
+  fetchCleanerEmails();
+}
+
+function closeCleaner() {
+  state.cleanerOpen = false;
+  state.cleanerLoading = false;
+  state.cleanerEmails = [];
+  state.cleanerProgress = null;
+  state.cleanerDone = false;
+  state.cleanerResults = null;
+  render();
+}
+
+function setCleanerAction(idx, action) {
+  if (state.cleanerEmails[idx]) {
+    const current = state.cleanerEmails[idx].action;
+    state.cleanerEmails[idx].action = current === action ? null : action;
+    render();
+  }
+}
+
+function toggleCleanerSelectAll(action) {
+  const allSet = state.cleanerEmails.every(item => item.action === action);
+  state.cleanerEmails.forEach(item => { item.action = allSet ? null : action; });
+  render();
+}
+
 function respond(msg) {
   const l = msg.toLowerCase();
   if (l.includes("email")||l.includes("draft"))
     return "I'd be happy to help you draft that email. Here's a professional template:\n\n**Subject:** [Topic]\n\nDear [Recipient],\n\nI hope this message finds you well. I'm reaching out regarding [purpose].\n\n[Key points to cover]\n\nPlease let me know if you'd like to discuss further.\n\nBest regards,\nSaher\n\nWould you like me to customize this? Share the recipient, subject, and key points.";
   if (l.includes("meeting")||l.includes("prep")||l.includes("schedule"))
-    return "Here's your meeting prep framework:\n\n**1. Objective** — Define the key outcome\n**2. Agenda** — 3-5 discussion points with time\n**3. Background** — Key data and context\n**4. Questions** — 2-3 strategic questions\n**5. Action items** — Expected next steps\n\nShare the meeting topic and I'll build a detailed prep brief.";
+    return "Here's your meeting prep framework:\n\n**1. Objective** â Define the key outcome\n**2. Agenda** â 3-5 discussion points with time\n**3. Background** â Key data and context\n**4. Questions** â 2-3 strategic questions\n**5. Action items** â Expected next steps\n\nShare the meeting topic and I'll build a detailed prep brief.";
   if (l.includes("research")||l.includes("analyze")||l.includes("trend"))
-    return "I'll help with that research. To give you the best analysis:\n\n**1. Scope** — What specific aspect?\n**2. Depth** — Quick overview or deep dive?\n**3. Format** — Summary, bullets, or full report?\n**4. Audience** — Who will see this?\n\nI'll put together key findings, data points, and actionable insights.";
+    return "I'll help with that research. To give you the best analysis:\n\n**1. Scope** â What specific aspect?\n**2. Depth** â Quick overview or deep dive?\n**3. Format** â Summary, bullets, or full report?\n**4. Audience** â Who will see this?\n\nI'll put together key findings, data points, and actionable insights.";
   if (l.includes("task")||l.includes("to-do")||l.includes("todo")||l.includes("priorit"))
-    return "Let's organize your tasks:\n\n**Urgent & Important** — Do first\n• [Critical deadlines]\n\n**Important, Not Urgent** — Schedule\n• [Strategic work]\n\n**Urgent, Not Important** — Delegate\n• [Routine requests]\n\n**Neither** — Defer or eliminate\n\nTell me what's on your plate and I'll prioritize everything.";
+    return "Let's organize your tasks:\n\n**Urgent & Important** â Do first\nâ¢ [Critical deadlines]\n\n**Important, Not Urgent** â Schedule\nâ¢ [Strategic work]\n\n**Urgent, Not Important** â Delegate\nâ¢ [Routine requests]\n\n**Neither** â Defer or eliminate\n\nTell me what's on your plate and I'll prioritize everything.";
   if (l.includes("write")||l.includes("document")||l.includes("report"))
-    return "Ready to help you write. I'll need:\n\n**1. Type** — Report, memo, proposal?\n**2. Audience** — Who reads this?\n**3. Key message** — Main takeaway?\n**4. Tone** — Formal, conversational, persuasive?\n**5. Length** — Rough target?\n\nShare these and I'll create a polished draft.";
+    return "Ready to help you write. I'll need:\n\n**1. Type** â Report, memo, proposal?\n**2. Audience** â Who reads this?\n**3. Key message** â Main takeaway?\n**4. Tone** â Formal, conversational, persuasive?\n**5. Length** â Rough target?\n\nShare these and I'll create a polished draft.";
   if (l.includes("brainstorm")||l.includes("idea"))
-    return "Let's brainstorm! Tell me:\n\n• What problem are you solving?\n• Any constraints?\n• What's been tried before?\n\nI'll generate ideas from multiple angles — conventional, creative, and wild cards. What topic should we explore?";
-  return "I'm here to help! I can:\n\n• **Draft & refine** — emails, documents, presentations\n• **Research & analyze** — trends, data, competitive insights\n• **Plan & organize** — meetings, tasks, schedules\n• **Strategize** — brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
+    return "Let's brainstorm! Tell me:\n\nâ¢ What problem are you solving?\nâ¢ Any constraints?\nâ¢ What's been tried before?\n\nI'll generate ideas from multiple angles â conventional, creative, and wild cards. What topic should we explore?";
+  return "I'm here to help! I can:\n\nâ¢ **Draft & refine** â emails, documents, presentations\nâ¢ **Research & analyze** â trends, data, competitive insights\nâ¢ **Plan & organize** â meetings, tasks, schedules\nâ¢ **Strategize** â brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
 }
 
-/* ─── Render ─── */
+/* âââ Render âââ */
 function render() {
   const mob = isMobile();
   const has = state.messages.length > 0;
@@ -684,14 +910,19 @@ function render() {
   if (state.view === "chat") {
     const canSend = state.input.trim() && !state.typing;
     html += `<div class="inputbar"><div style="max-width:720px;margin:0 auto">`;
-    html += `<div class="send-wrap"><textarea class="send-input" id="msg-input" rows="1" placeholder="${mob?'Ask me anything...':'Ask me anything — emails, meetings, research, tasks...'}" oninput="onInput(event)" onkeydown="onKey(event)">${esc(state.input)}</textarea>`;
+    html += `<div class="send-wrap"><textarea class="send-input" id="msg-input" rows="1" placeholder="${mob?'Ask me anything...':'Ask me anything â emails, meetings, research, tasks...'}" oninput="onInput(event)" onkeydown="onKey(event)">${esc(state.input)}</textarea>`;
     html += `<button class="send-btn ${canSend?'active':'inactive'}" onclick="sendFromInput()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${canSend?'white':'#475569'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>`;
     html += `</div>`;
-    if (!mob) html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:#334155">Executive AI Assistant — Always ready to help</div>`;
+    if (!mob) html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:#334155">Executive AI Assistant â Always ready to help</div>`;
     html += `</div></div>`;
   }
 
   html += `</div>`;
+
+  // Cleaner overlay
+  if (state.cleanerOpen) {
+    html += renderCleanerView();
+  }
 
   document.getElementById("app").innerHTML = `<div class="shell">${html}</div>`;
 
@@ -706,7 +937,7 @@ function renderEmailView(mob) {
   let html = "";
   const hasAccounts = state.accounts.length > 0;
 
-  // No accounts connected — show connect screen
+  // No accounts connected â show connect screen
   if (!hasAccounts && !state.gmailLoading) {
     html += `<div class="gmail-connect">`;
     html += `<div class="gmail-connect-icon">${icon('mail',28,'#A5B4FC')}</div>`;
@@ -735,7 +966,7 @@ function renderEmailView(mob) {
     html += `<div class="email-detail-subject">${esc(e.subject)}</div>`;
     html += `<div class="email-detail-meta">`;
     html += `<div class="email-detail-avatar" style="background:${e.avatarColor}">${initials}</div>`;
-    html += `<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#F1F5F9">${esc(e.from)}</div><div style="font-size:12px;color:#64748B">${esc(e.email)} · ${e.date}</div></div>`;
+    html += `<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#F1F5F9">${esc(e.from)}</div><div style="font-size:12px;color:#64748B">${esc(e.email)} Â· ${e.date}</div></div>`;
     html += `<div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:50%;background:${e.accountColor}"></div><span style="font-size:10px;color:#475569">${shortEmail(e.accountEmail)}</span></div>`;
     html += `</div></div>`;
     if (e.label) html += `<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor};margin-bottom:12px">${e.label}</span>`;
@@ -748,7 +979,7 @@ function renderEmailView(mob) {
     return html;
   }
 
-  /* ─── Inbox list view ─── */
+  /* âââ Inbox list view âââ */
 
   /* Header */
   html += `<div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between">`;
@@ -759,6 +990,7 @@ function renderEmailView(mob) {
   const totalUnread = getAllEmails().filter(e=>e.unread).length;
   if (totalUnread) html += `<span style="font-size:11px;color:#475569">${totalUnread} unread</span>`;
   html += `<button class="refresh-btn" onclick="refreshAllEmails()" title="Refresh all">${icon('refresh-cw',15)}</button>`;
+  html += `<button onclick="openCleaner()" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(99,102,241,.25);background:rgba(99,102,241,.1);color:#A5B4FC;cursor:pointer;font-size:11px;font-weight:500;display:flex;align-items:center;gap:5px;transition:all .15s" title="Clean Inbox">${icon('shield',13)} Clean</button>`;
   html += `<button class="gmail-connect-btn" onclick="connectGmail()" style="padding:6px 14px;font-size:12px;border-radius:8px">${icon('plus',13)} Add</button>`;
   html += `</div></div>`;
 
@@ -828,12 +1060,154 @@ function renderEmailView(mob) {
   return html;
 }
 
+function renderCleanerView() {
+  let html = '<div class="cleaner-overlay" onclick="if(event.target===this)closeCleaner()">';
+  html += '<div class="cleaner-panel">';
+
+  // Header
+  html += '<div class="cleaner-header">';
+  html += `<h3>${icon('shield',18,'#A5B4FC')} Inbox Cleaner</h3>`;
+  html += `<button onclick="closeCleaner()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px">${icon('x',18)}</button>`;
+  html += '</div>';
+
+  // Loading state
+  if (state.cleanerLoading) {
+    html += '<div class="cleaner-progress">';
+    html += '<div class="spinner" style="margin:0 auto 16px"></div>';
+    html += '<div style="font-size:14px;color:#94A3B8">Scanning your inbox for marketing emails...</div>';
+    html += '<div style="font-size:12px;color:#475569;margin-top:6px">Checking up to 100 emails per account</div>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // Progress state (batch operations)
+  if (state.cleanerProgress) {
+    const pct = Math.round((state.cleanerProgress.done / state.cleanerProgress.total) * 100);
+    html += '<div class="cleaner-progress">';
+    html += `<div style="font-size:14px;color:#F1F5F9;margin-bottom:4px">Cleaning your inbox...</div>`;
+    html += `<div style="font-size:12px;color:#94A3B8">${state.cleanerProgress.done} of ${state.cleanerProgress.total} processed</div>`;
+    html += '<div class="cleaner-progress-bar"><div class="cleaner-progress-fill" style="width:' + pct + '%"></div></div>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // Done state
+  if (state.cleanerDone && state.cleanerResults) {
+    const r = state.cleanerResults;
+    html += '<div class="cleaner-done">';
+    html += `<div style="width:56px;height:56px;border-radius:14px;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">${icon('check',24,'#22C55E')}</div>`;
+    html += '<div style="font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:8px">Inbox Cleaned!</div>';
+    const parts = [];
+    if (r.trashed) parts.push(r.trashed + ' trashed');
+    if (r.archived) parts.push(r.archived + ' archived');
+    if (r.failed) parts.push(r.failed + ' failed');
+    html += `<div style="font-size:14px;color:#94A3B8;margin-bottom:20px">${parts.join(' Â· ')}</div>`;
+    if (r.failed > 0) {
+      html += '<div style="font-size:12px;color:#FCA5A5;margin-bottom:16px">Some emails failed â you may need to reconnect your account for updated permissions.</div>';
+    }
+    html += `<button onclick="closeCleaner()" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:14px;font-weight:600;cursor:pointer">Done</button>`;
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // Empty state
+  if (state.cleanerEmails.length === 0) {
+    html += '<div class="cleaner-empty">';
+    html += `<div style="width:56px;height:56px;border-radius:14px;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">${icon('check',24,'#22C55E')}</div>`;
+    html += '<div style="font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:8px">Your inbox is clean!</div>';
+    html += '<div style="font-size:14px;color:#94A3B8;margin-bottom:20px">No promotional or marketing emails were detected.</div>';
+    html += `<button onclick="closeCleaner()" style="padding:10px 24px;border-radius:8px;border:none;background:rgba(148,163,184,.1);color:#CBD5E1;font-size:14px;font-weight:500;cursor:pointer">Close</button>`;
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  // Stats
+  const cats = {};
+  state.cleanerEmails.forEach(item => {
+    const c = item.category;
+    cats[c] = (cats[c] || 0) + 1;
+  });
+  const catLabels = { promotions:'Promos', social:'Social', forums:'Forums', updates:'Updates', keywords:'Marketing', platform:'Newsletters' };
+  const catColors = { promotions:'#F59E0B', social:'#EC4899', forums:'#8B5CF6', updates:'#06B6D4', keywords:'#EF4444', platform:'#10B981' };
+
+  html += '<div class="cleaner-stats">';
+  html += `<span class="cleaner-stat" style="background:rgba(99,102,241,.15)">${state.cleanerEmails.length} found</span>`;
+  Object.keys(cats).forEach(c => {
+    html += `<span class="cleaner-stat" style="background:${catColors[c]||'#6366F1'}18;color:${catColors[c]||'#A5B4FC'}">${cats[c]} ${catLabels[c]||c}</span>`;
+  });
+  html += '</div>';
+
+  // Select all bar
+  const actionable = state.cleanerEmails.filter(i => i.action === 'trash' || i.action === 'archive');
+  html += '<div style="padding:8px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.06);font-size:12px;color:#94A3B8">';
+  html += `<button onclick="toggleCleanerSelectAll('archive')" style="background:none;border:none;color:#A5B4FC;cursor:pointer;font-size:12px;font-weight:500">Archive All</button>`;
+  html += '<span style="color:#334155">|</span>';
+  html += `<button onclick="toggleCleanerSelectAll('trash')" style="background:none;border:none;color:#FCA5A5;cursor:pointer;font-size:12px;font-weight:500">Trash All</button>`;
+  html += '<span style="flex:1"></span>';
+  html += `<span>${actionable.length} selected</span>`;
+  html += '</div>';
+
+  // Email list
+  html += '<div class="cleaner-list">';
+  state.cleanerEmails.forEach((item, idx) => {
+    const e = item.email;
+    const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    const isKept = item.action === 'keep';
+
+    html += `<div class="cleaner-item ${isKept?'kept':''}">`;
+
+    // Avatar
+    html += `<div style="position:relative;flex-shrink:0"><div style="width:32px;height:32px;border-radius:8px;background:${e.avatarColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">${initials}</div>`;
+    if (state.accounts.length > 1) {
+      html += `<div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:${e.accountColor};border:2px solid #1E293B"></div>`;
+    }
+    html += '</div>';
+
+    // Content
+    html += '<div style="flex:1;min-width:0">';
+    html += `<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px">`;
+    html += `<span style="font-size:13px;font-weight:${e.unread?600:400};color:${e.unread?'#F1F5F9':'#94A3B8'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.from)}</span>`;
+    html += `<span style="font-size:11px;color:#475569;flex-shrink:0">${e.date}</span>`;
+    html += '</div>';
+    html += `<div style="font-size:12px;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">${esc(e.subject)}</div>`;
+    html += `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">`;
+    html += `<span class="cleaner-reason" style="background:${catColors[item.category]||'#6366F1'}18;color:${catColors[item.category]||'#A5B4FC'}">${esc(item.reason)}</span>`;
+    html += '</div>';
+
+    // Inline action buttons
+    html += '<div class="cleaner-actions">';
+    html += `<button class="${item.action==='keep'?'selected-keep':''}" onclick="setCleanerAction(${idx},'keep')">${icon('check',11)} Keep</button>`;
+    html += `<button class="${item.action==='archive'?'selected-archive':''}" onclick="setCleanerAction(${idx},'archive')">${icon('archive',11)} Archive</button>`;
+    html += `<button class="${item.action==='trash'?'selected-trash':''}" onclick="setCleanerAction(${idx},'trash')">${icon('trash',11)} Trash</button>`;
+    html += '</div>';
+
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  // Footer with apply button
+  html += '<div class="cleaner-footer">';
+  html += '<div class="bulk-select">';
+  html += `<span>${actionable.length} of ${state.cleanerEmails.length} will be cleaned</span>`;
+  html += '</div>';
+  const canApply = actionable.length > 0;
+  html += `<button class="cleaner-apply-btn ${canApply?'active':'disabled'}" ${canApply?'onclick="applyCleanerActions()"':''}>${icon('shield',14)} Apply to ${actionable.length} email${actionable.length!==1?'s':''}</button>`;
+  html += '</div>';
+
+  html += '</div></div>';
+  return html;
+}
+
 function renderChatView(mob, has, filtered, today) {
   let html = `<div class="content-inner" style="max-width:720px;margin:0 auto;padding:${mob?'20px 16px':'48px 28px'}">`;
 
   if (!has) {
     if (mob && state.installHint) {
-      html += `<div class="install-hint">${icon('share',16)}<span style="flex:1">Tap <strong>Share → Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px">${icon('x',14)}</button></div>`;
+      html += `<div class="install-hint">${icon('share',16)}<span style="flex:1">Tap <strong>Share â Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px">${icon('x',14)}</button></div>`;
     }
 
     html += `<div style="margin-bottom:${mob?28:40}px">`;
@@ -876,7 +1250,7 @@ function renderChatView(mob, has, filtered, today) {
   return html;
 }
 
-/* ─── Actions ─── */
+/* âââ Actions âââ */
 function openSidebar() { state.sidebarOpen=true; render(); }
 function closeSidebar() { state.sidebarOpen=false; render(); }
 function newChat() { state.messages=[]; state.sidebarOpen=false; state.view="chat"; render(); }
@@ -936,11 +1310,11 @@ function sendMsg(text) {
   }, 700 + Math.random() * 1000);
 }
 
-/* ─── Init ─── */
+/* âââ Init âââ */
 window.addEventListener("resize", render);
 render();
 
-// Remove ALL service workers and caches — they cause issues with Google sign-in
+// Remove ALL service workers and caches â they cause issues with Google sign-in
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
@@ -953,5 +1327,3 @@ setTimeout(initGmailClient, 300);
 </script>
 </body>
 </html>
-
-<!-- updated -->
