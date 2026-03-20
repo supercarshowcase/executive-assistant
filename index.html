@@ -169,6 +169,9 @@
     .add-account-btn { width: 100%; padding: 7px 12px; background: transparent; border: 1px dashed rgba(148,163,184,.15); border-radius: 8px; color: #475569; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 6px; margin-top: 4px; transition: all .15s; }
     .add-account-btn:hover { border-color: rgba(99,102,241,.3); color: #A5B4FC; }
 
+    .ic { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+    .ic svg { display: block; }
+
     @media (max-width: 767px) {
       .email-item { padding: 12px 16px; }
       .email-detail { padding: 16px; }
@@ -181,8 +184,44 @@
 </head>
 <body>
 <div id="app"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
 <script>
+/* ─── Inline SVG Icons (no CDN dependency) ─── */
+const ICONS = {
+  sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  menu: '<line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  "message-square": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  "check-square": '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  "pen-tool": '<path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
+  "bar-chart-3": '<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  "file-text": '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
+  "trending-up": '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  "book-open": '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  lightbulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  "arrow-left": '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  "arrow-right": '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  "corner-up-left": '<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  forward: '<polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>',
+  "refresh-cw": '<polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>',
+  "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+  coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
+};
+
+function icon(name, size, color) {
+  const s = size || 16;
+  const c = color ? ` color="${color}"` : '';
+  const svg = ICONS[name] || '';
+  return `<span class="ic" style="width:${s}px;height:${s}px${color?';color:'+color:''}">`
+    + `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span>`;
+}
+
 /* ─── Gmail Config ─── */
 const GMAIL_CLIENT_ID = "140814775397-qaadb25m8gg69gom7hq1igdehlgsjf1h.apps.googleusercontent.com";
 const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.labels";
@@ -255,7 +294,6 @@ function loadGoogleScript() {
     s.src = 'https://accounts.google.com/gsi/client';
     s.async = true;
     s.onload = () => {
-      // Google script loaded but API may need a moment
       const check = () => {
         if (typeof google !== 'undefined' && google.accounts) resolve();
         else setTimeout(check, 200);
@@ -286,7 +324,6 @@ function initGmailClient() {
 
 function connectGmail() {
   if (!state.tokenClient) {
-    // Try to init again and show loading state
     state.gmailLoading = true;
     render();
     loadGoogleScript().then(() => {
@@ -308,7 +345,6 @@ function connectGmail() {
   }
   state.gmailLoading = true;
   render();
-  // Force account chooser so user can pick a different account each time
   state.tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
@@ -334,7 +370,6 @@ async function handleGmailAuth(tokenResponse) {
   const token = tokenResponse.access_token;
 
   try {
-    // Fetch profile to get email address
     const profileRes = await fetch(`${GMAIL_API}/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -342,10 +377,8 @@ async function handleGmailAuth(tokenResponse) {
     const profile = await profileRes.json();
     const email = profile.emailAddress;
 
-    // Check if already connected
     const existing = state.accounts.find(a => a.email === email);
     if (existing) {
-      // Update token
       existing.token = token;
       existing.profile = profile;
       state.gmailLoading = false;
@@ -353,7 +386,6 @@ async function handleGmailAuth(tokenResponse) {
       return;
     }
 
-    // Create new account entry
     const color = ACCT_COLORS[state.accounts.length % ACCT_COLORS.length];
     const acct = {
       email,
@@ -367,8 +399,6 @@ async function handleGmailAuth(tokenResponse) {
     state.accounts.push(acct);
     state.gmailLoading = false;
     render();
-
-    // Fetch emails for this account
     await fetchAccountEmails(acct);
   } catch (err) {
     state.gmailLoading = false;
@@ -523,7 +553,6 @@ function getAllEmails() {
   state.accounts.forEach(acct => {
     all = all.concat(acct.emails);
   });
-  // Sort by date descending
   all.sort((a, b) => {
     if (a.dateObj && b.dateObj) return b.dateObj - a.dateObj;
     return 0;
@@ -592,15 +621,15 @@ function render() {
   /* Sidebar */
   html += `<div class="sidebar ${state.sidebarOpen?'open':''}">`;
   html += `<div style="padding:20px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between">`;
-  html += `<div style="display:flex;align-items:center;gap:12px"><div class="avatar" style="width:36px;height:36px"><i data-lucide="sparkles" style="width:18px;height:18px;color:white"></i></div><div><div style="font-weight:700;font-size:15px;color:#F8FAFC">Executive AI</div><div style="font-size:11px;color:#64748B">Your personal assistant</div></div></div>`;
-  if (mob) html += `<button onclick="closeSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px"><i data-lucide="x" style="width:20px;height:20px"></i></button>`;
+  html += `<div style="display:flex;align-items:center;gap:12px"><div class="avatar" style="width:36px;height:36px">${icon('sparkles',18,'white')}</div><div><div style="font-weight:700;font-size:15px;color:#F8FAFC">Executive AI</div><div style="font-size:11px;color:#64748B">Your personal assistant</div></div></div>`;
+  if (mob) html += `<button onclick="closeSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px">${icon('x',20)}</button>`;
   html += `</div>`;
 
-  html += `<div style="padding:12px 16px"><button onclick="newChat()" style="width:100%;padding:10px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:#A5B4FC;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500"><i data-lucide="plus" style="width:16px;height:16px"></i> New Conversation</button></div>`;
+  html += `<div style="padding:12px 16px"><button onclick="newChat()" style="width:100%;padding:10px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:#A5B4FC;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500">${icon('plus',16)} New Conversation</button></div>`;
 
   html += `<div style="padding:4px 8px;flex:1;overflow-y:auto"><div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;padding:8px 12px 6px">Categories</div>`;
   CATEGORIES.forEach(c => {
-    html += `<button class="sidebar-btn ${state.category===c.id?'active':''}" onclick="setCategory('${c.id}')"><i data-lucide="${c.icon}" style="width:16px;height:16px"></i> ${c.label}</button>`;
+    html += `<button class="sidebar-btn ${state.category===c.id?'active':''}" onclick="setCategory('${c.id}')">${icon(c.icon,16)} ${c.label}</button>`;
   });
   html += `</div>`;
 
@@ -611,7 +640,7 @@ function render() {
   state.accounts.forEach(acct => {
     html += `<div class="sidebar-acct"><div class="sacct-dot" style="background:${acct.color}"></div><span>${esc(acct.email)}</span></div>`;
   });
-  html += `<button class="add-account-btn" onclick="connectGmail()"><i data-lucide="plus" style="width:12px;height:12px"></i> Add account</button>`;
+  html += `<button class="add-account-btn" onclick="connectGmail()">${icon('plus',12)} Add account</button>`;
   html += `</div></div>`;
 
   html += `<div style="padding:12px 16px;border-top:1px solid rgba(148,163,184,.1);display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366F1,#EC4899);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white">S</div><div><div style="font-size:13px;font-weight:600;color:#F1F5F9">Saher</div><div style="font-size:11px;color:#64748B">Modus Real Estate</div></div></div>`;
@@ -623,10 +652,10 @@ function render() {
   /* Topbar */
   html += `<div class="topbar">`;
   html += `<div style="display:flex;align-items:center;gap:10px">`;
-  if (mob) html += `<button class="hamburger" onclick="openSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px;margin-right:4px"><i data-lucide="menu" style="width:20px;height:20px"></i></button>`;
+  if (mob) html += `<button class="hamburger" onclick="openSidebar()" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:4px;margin-right:4px">${icon('menu',20)}</button>`;
   const viewIcon = state.view === "email" ? "mail" : "message-square";
   const viewLabel = state.view === "email" ? (state.selectedEmail ? "Email" : "Unified Inbox") : (has ? "Conversation" : "Home");
-  html += `<i data-lucide="${viewIcon}" style="width:18px;height:18px;color:#6366F1"></i><span style="font-weight:600;font-size:15px;color:#F1F5F9">${viewLabel}</span>`;
+  html += `${icon(viewIcon,18,'#6366F1')}<span style="font-weight:600;font-size:15px;color:#F1F5F9">${viewLabel}</span>`;
   if (state.view === "email" && hasAccounts) {
     html += `<span style="font-size:12px;color:#475569;margin-left:4px">${state.accounts.length} account${state.accounts.length>1?'s':''}</span>`;
   }
@@ -636,8 +665,8 @@ function render() {
 
   /* Tab bar */
   html += `<div class="tab-bar">`;
-  html += `<button class="tab-btn ${state.view==='chat'?'active':''}" onclick="switchView('chat')"><i data-lucide="message-square" style="width:15px;height:15px"></i> Chat</button>`;
-  html += `<button class="tab-btn ${state.view==='email'?'active':''}" onclick="switchView('email')"><i data-lucide="mail" style="width:15px;height:15px"></i> Email ${unreadCount?`<span class="badge">${unreadCount}</span>`:''}</button>`;
+  html += `<button class="tab-btn ${state.view==='chat'?'active':''}" onclick="switchView('chat')">${icon('message-square',15)} Chat</button>`;
+  html += `<button class="tab-btn ${state.view==='email'?'active':''}" onclick="switchView('email')">${icon('mail',15)} Email ${unreadCount?`<span class="badge">${unreadCount}</span>`:''}</button>`;
   html += `</div>`;
 
   /* Content */
@@ -665,7 +694,6 @@ function render() {
   html += `</div>`;
 
   document.getElementById("app").innerHTML = `<div class="shell">${html}</div>`;
-  lucide.createIcons();
 
   const anchor = document.getElementById("scroll-anchor");
   if (anchor) anchor.scrollIntoView({ behavior: "smooth" });
@@ -681,7 +709,7 @@ function renderEmailView(mob) {
   // No accounts connected — show connect screen
   if (!hasAccounts && !state.gmailLoading) {
     html += `<div class="gmail-connect">`;
-    html += `<div class="gmail-connect-icon"><i data-lucide="mail" style="width:28px;height:28px;color:#A5B4FC"></i></div>`;
+    html += `<div class="gmail-connect-icon">${icon('mail',28,'#A5B4FC')}</div>`;
     html += `<h2>Connect Your Gmail Accounts</h2>`;
     html += `<p>Sign in with Google to view all your inboxes in one unified view. You can add multiple accounts.</p>`;
     html += `<button class="gmail-connect-btn" onclick="connectGmail()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Sign in with Google</button>`;
@@ -702,7 +730,7 @@ function renderEmailView(mob) {
     const initials = e.from.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
 
     html += `<div class="email-detail">`;
-    html += `<button class="back-btn" onclick="backToInbox()"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Back to Inbox</button>`;
+    html += `<button class="back-btn" onclick="backToInbox()">${icon('arrow-left',16)} Back to Inbox</button>`;
     html += `<div class="email-detail-header">`;
     html += `<div class="email-detail-subject">${esc(e.subject)}</div>`;
     html += `<div class="email-detail-meta">`;
@@ -713,9 +741,9 @@ function renderEmailView(mob) {
     if (e.label) html += `<span class="email-label" style="background:${e.labelColor}22;color:${e.labelColor};margin-bottom:12px">${e.label}</span>`;
     html += `<div class="email-detail-body">${esc(e.body)}</div>`;
     html += `<div class="email-action-bar">`;
-    html += `<button class="email-action-btn primary" onclick="replyToEmail('${e.id}')"><i data-lucide="corner-up-left" style="width:14px;height:14px"></i> Reply</button>`;
-    html += `<button class="email-action-btn" onclick="draftFollowUp('${e.id}')"><i data-lucide="pen-tool" style="width:14px;height:14px"></i> AI Draft</button>`;
-    html += `<button class="email-action-btn"><i data-lucide="forward" style="width:14px;height:14px"></i> Forward</button>`;
+    html += `<button class="email-action-btn primary" onclick="replyToEmail('${e.id}')">${icon('corner-up-left',14)} Reply</button>`;
+    html += `<button class="email-action-btn" onclick="draftFollowUp('${e.id}')">${icon('pen-tool',14)} AI Draft</button>`;
+    html += `<button class="email-action-btn">${icon('forward',14)} Forward</button>`;
     html += `</div></div>`;
     return html;
   }
@@ -730,8 +758,8 @@ function renderEmailView(mob) {
   html += `<div style="display:flex;align-items:center;gap:10px">`;
   const totalUnread = getAllEmails().filter(e=>e.unread).length;
   if (totalUnread) html += `<span style="font-size:11px;color:#475569">${totalUnread} unread</span>`;
-  html += `<button class="refresh-btn" onclick="refreshAllEmails()" title="Refresh all"><i data-lucide="refresh-cw" style="width:15px;height:15px"></i></button>`;
-  html += `<button class="gmail-connect-btn" onclick="connectGmail()" style="padding:6px 14px;font-size:12px;border-radius:8px"><i data-lucide="plus" style="width:13px;height:13px"></i> Add</button>`;
+  html += `<button class="refresh-btn" onclick="refreshAllEmails()" title="Refresh all">${icon('refresh-cw',15)}</button>`;
+  html += `<button class="gmail-connect-btn" onclick="connectGmail()" style="padding:6px 14px;font-size:12px;border-radius:8px">${icon('plus',13)} Add</button>`;
   html += `</div></div>`;
 
   /* Account filter chips */
@@ -752,7 +780,7 @@ function renderEmailView(mob) {
     html += `<div style="padding:6px 20px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,.06)">`;
     html += `<div style="width:6px;height:6px;border-radius:50%;background:${state.accounts[0].color}"></div>`;
     html += `<span style="font-size:12px;color:#64748B">${esc(state.accounts[0].email)}</span>`;
-    html += `<button onclick="disconnectAccount('${esc(state.accounts[0].email)}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:11px;margin-left:auto;padding:2px 6px" title="Disconnect"><i data-lucide="log-out" style="width:12px;height:12px"></i></button>`;
+    html += `<button onclick="disconnectAccount('${esc(state.accounts[0].email)}')" style="background:none;border:none;color:#475569;cursor:pointer;font-size:11px;margin-left:auto;padding:2px 6px" title="Disconnect">${icon('log-out',12)}</button>`;
     html += `</div>`;
   }
 
@@ -786,7 +814,6 @@ function renderEmailView(mob) {
     html += `<div class="email-item ${e.unread?'unread':''}" onclick="openEmail('${e.id}')">`;
     html += `<div class="email-dot ${e.unread?'':'read'}"></div>`;
     html += `<div style="position:relative;flex-shrink:0"><div style="width:32px;height:32px;border-radius:8px;background:${e.avatarColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white">${initials}</div>`;
-    // Account color indicator dot on avatar
     if (state.accounts.length > 1) {
       html += `<div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:${e.accountColor};border:2px solid #0F172A"></div>`;
     }
@@ -806,18 +833,18 @@ function renderChatView(mob, has, filtered, today) {
 
   if (!has) {
     if (mob && state.installHint) {
-      html += `<div class="install-hint"><i data-lucide="share" style="width:16px;height:16px;flex-shrink:0"></i><span style="flex:1">Tap <strong>Share → Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px"><i data-lucide="x" style="width:14px;height:14px"></i></button></div>`;
+      html += `<div class="install-hint">${icon('share',16)}<span style="flex:1">Tap <strong>Share → Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px">${icon('x',14)}</button></div>`;
     }
 
     html += `<div style="margin-bottom:${mob?28:40}px">`;
-    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i data-lucide="coffee" style="width:18px;height:18px;color:#F59E0B"></i><span style="font-size:12px;color:#F59E0B;font-weight:500">${today}</span></div>`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${icon('coffee',18,'#F59E0B')}<span style="font-size:12px;color:#F59E0B;font-weight:500">${today}</span></div>`;
     html += `<h1 class="greeting-title" style="font-size:28px;font-weight:700;color:#F8FAFC;margin:0 0 6px;letter-spacing:-.02em">${greeting()}, Saher</h1>`;
     html += `<p style="font-size:${mob?14:15}px;color:#94A3B8;margin:0;line-height:1.5">How can I help you today?</p></div>`;
 
     html += `<div style="margin-bottom:${mob?28:36}px"><div style="font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Suggestions</div>`;
     html += `<div class="suggestions-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
     SUGGESTIONS.forEach(s => {
-      html += `<button class="suggestion-btn" onclick="sendMsg('${esc(s.text)}')"><i data-lucide="${s.icon}" style="width:16px;height:16px;flex-shrink:0;color:#6366F1"></i><span style="flex:1">${esc(s.text)}</span><i data-lucide="arrow-right" style="width:14px;height:14px;flex-shrink:0;opacity:.4"></i></button>`;
+      html += `<button class="suggestion-btn" onclick="sendMsg('${esc(s.text)}')">${icon(s.icon,16,null)}<span style="flex:1">${esc(s.text)}</span>${icon('arrow-right',14)}</button>`;
     });
     html += `</div></div>`;
 
@@ -829,18 +856,18 @@ function renderChatView(mob, has, filtered, today) {
     html += `</div>`;
     html += `<div class="actions-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">`;
     filtered.forEach(a => {
-      html += `<button class="action-btn" onclick="fillInput('${esc(a.prompt)} ')"><div class="icon-circle" style="background:${a.color}18"><i data-lucide="${a.icon}" style="width:16px;height:16px;color:${a.color}"></i></div>${a.label}</button>`;
+      html += `<button class="action-btn" onclick="fillInput('${esc(a.prompt)} ')"><div class="icon-circle" style="background:${a.color}18">${icon(a.icon,16,a.color)}</div>${a.label}</button>`;
     });
     html += `</div></div>`;
   } else {
     state.messages.forEach(m => {
       html += `<div class="msg-row ${m.role}">`;
-      if (m.role === "assistant") html += `<div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px;margin-top:2px"><i data-lucide="sparkles" style="width:${mob?13:15}px;height:${mob?13:15}px;color:white"></i></div>`;
+      if (m.role === "assistant") html += `<div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px;margin-top:2px">${icon('sparkles',mob?13:15,'white')}</div>`;
       html += `<div class="msg-bubble ${m.role}">${boldify(m.content)}<div class="msg-time ${m.role}">${fmtTime(m.time)}</div></div>`;
       html += `</div>`;
     });
     if (state.typing) {
-      html += `<div class="msg-row"><div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px"><i data-lucide="sparkles" style="width:${mob?13:15}px;height:${mob?13:15}px;color:white"></i></div><div class="msg-bubble assistant"><div class="dots"><span></span><span></span><span></span></div></div></div>`;
+      html += `<div class="msg-row"><div class="avatar" style="width:${mob?28:32}px;height:${mob?28:32}px">${icon('sparkles',mob?13:15,'white')}</div><div class="msg-bubble assistant"><div class="dots"><span></span><span></span><span></span></div></div></div>`;
     }
     html += `<div id="scroll-anchor"></div>`;
   }
@@ -913,17 +940,16 @@ function sendMsg(text) {
 window.addEventListener("resize", render);
 render();
 
-// Force clear old service worker caches, then register new SW
+// Remove ALL service workers and caches — they cause issues with Google sign-in
 if ("serviceWorker" in navigator) {
-  // Unregister old SWs and clear old caches first
-  caches.keys().then(keys => {
-    keys.forEach(k => { if (k !== 'exec-ai-v2') caches.delete(k); });
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
   });
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
 
-// Init Gmail after a short delay to let the page settle
-setTimeout(initGmailClient, 500);
+// Init Gmail client
+setTimeout(initGmailClient, 300);
 </script>
 </body>
 </html>
