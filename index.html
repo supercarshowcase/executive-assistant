@@ -9,7 +9,7 @@
   <meta name="description" content="Executive AI Assistant for Saher" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>Executive AI â Saher</title>
+  <title>Executive AI — Saher</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -218,7 +218,7 @@
 <body>
 <div id="app"></div>
 <script>
-/* âââ Inline SVG Icons (no CDN dependency) âââ */
+/* ─── Inline SVG Icons (no CDN dependency) ─── */
 const ICONS = {
   sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
   x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
@@ -259,15 +259,15 @@ function icon(name, size, color) {
     + `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span>`;
 }
 
-/* âââ Gmail Config âââ */
+/* ─── Gmail Config ─── */
 const GMAIL_CLIENT_ID = "140814775397-qaadb25m8gg69gom7hq1igdehlgsjf1h.apps.googleusercontent.com";
 const GMAIL_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.labels https://www.googleapis.com/auth/gmail.modify";
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
-/* âââ Account Colors âââ */
+/* ─── Account Colors ─── */
 const ACCT_COLORS = ["#6366F1","#EC4899","#10B981","#F59E0B","#3B82F6","#8B5CF6","#EF4444","#06B6D4"];
 
-/* âââ State âââ */
+/* ─── State ─── */
 const state = {
   messages: [],
   input: "",
@@ -291,7 +291,7 @@ const state = {
   cleanerResults: null,  // { trashed: N, archived: N, failed: N }
 };
 
-/* âââ Data âââ */
+/* ─── Data ─── */
 const CATEGORIES = [
   { id:"all", label:"All", icon:"sparkles" },
   { id:"email", label:"Email & Comms", icon:"mail" },
@@ -323,7 +323,7 @@ const SUGGESTIONS = [
 const AVATAR_COLORS = ["#6366F1","#8B5CF6","#EC4899","#10B981","#F59E0B","#3B82F6","#EF4444","#06B6D4","#F97316","#14B8A6"];
 function avatarColor(name) { let h=0; for(let i=0;i<name.length;i++) h=name.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
 
-/* âââ Gmail API Functions âââ */
+/* ─── Gmail API Functions ─── */
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
     if (typeof google !== 'undefined' && google.accounts) {
@@ -591,7 +591,7 @@ function decodeBase64Url(data) {
   }
 }
 
-/* âââ Get all emails (unified) âââ */
+/* ─── Get all emails (unified) ─── */
 function getAllEmails() {
   let all = [];
   state.accounts.forEach(acct => {
@@ -622,7 +622,7 @@ function findEmailById(id) {
   return null;
 }
 
-/* âââ Helpers âââ */
+/* ─── Helpers ─── */
 function greeting() { const h=new Date().getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; }
 function fmtTime(d) { return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
 function isMobile() { return window.innerWidth < 768; }
@@ -630,7 +630,7 @@ function esc(s) { const d=document.createElement("div"); d.textContent=s; return
 function boldify(text) { return esc(text).replace(/\*\*(.*?)\*\*/g, '<strong style="color:#F1F5F9;font-weight:600">$1</strong>'); }
 function shortEmail(email) { const parts = email.split('@'); return parts[0].length > 10 ? parts[0].substring(0,10) + '...' : parts[0]; }
 
-/* âââ Inbox Cleaner Logic âââ */
+/* ─── Inbox Cleaner Logic ─── */
 const MARKETING_KEYWORDS = ['unsubscribe','newsletter','limited time','exclusive offer','promotion','manage preferences','opt out','sale ends','discount','deal of','weekly digest','monthly update','view in browser','view online','email preferences','no longer wish','manage subscriptions'];
 const MARKETING_DOMAINS = ['mailchimp.com','sendgrid.net','substack.com','constantcontact.com','mailgun.org','sendinblue.com','hubspot.com','klaviyo.com','campaign-archive.com','list-manage.com','mailerlite.com','convertkit.com','drip.com','aweber.com','getresponse.com','beehiiv.com'];
 
@@ -817,19 +817,19 @@ function respond(msg) {
   if (l.includes("email")||l.includes("draft"))
     return "I'd be happy to help you draft that email. Here's a professional template:\n\n**Subject:** [Topic]\n\nDear [Recipient],\n\nI hope this message finds you well. I'm reaching out regarding [purpose].\n\n[Key points to cover]\n\nPlease let me know if you'd like to discuss further.\n\nBest regards,\nSaher\n\nWould you like me to customize this? Share the recipient, subject, and key points.";
   if (l.includes("meeting")||l.includes("prep")||l.includes("schedule"))
-    return "Here's your meeting prep framework:\n\n**1. Objective** â Define the key outcome\n**2. Agenda** â 3-5 discussion points with time\n**3. Background** â Key data and context\n**4. Questions** â 2-3 strategic questions\n**5. Action items** â Expected next steps\n\nShare the meeting topic and I'll build a detailed prep brief.";
+    return "Here's your meeting prep framework:\n\n**1. Objective** — Define the key outcome\n**2. Agenda** — 3-5 discussion points with time\n**3. Background** — Key data and context\n**4. Questions** — 2-3 strategic questions\n**5. Action items** — Expected next steps\n\nShare the meeting topic and I'll build a detailed prep brief.";
   if (l.includes("research")||l.includes("analyze")||l.includes("trend"))
-    return "I'll help with that research. To give you the best analysis:\n\n**1. Scope** â What specific aspect?\n**2. Depth** â Quick overview or deep dive?\n**3. Format** â Summary, bullets, or full report?\n**4. Audience** â Who will see this?\n\nI'll put together key findings, data points, and actionable insights.";
+    return "I'll help with that research. To give you the best analysis:\n\n**1. Scope** — What specific aspect?\n**2. Depth** — Quick overview or deep dive?\n**3. Format** — Summary, bullets, or full report?\n**4. Audience** — Who will see this?\n\nI'll put together key findings, data points, and actionable insights.";
   if (l.includes("task")||l.includes("to-do")||l.includes("todo")||l.includes("priorit"))
-    return "Let's organize your tasks:\n\n**Urgent & Important** â Do first\nâ¢ [Critical deadlines]\n\n**Important, Not Urgent** â Schedule\nâ¢ [Strategic work]\n\n**Urgent, Not Important** â Delegate\nâ¢ [Routine requests]\n\n**Neither** â Defer or eliminate\n\nTell me what's on your plate and I'll prioritize everything.";
+    return "Let's organize your tasks:\n\n**Urgent & Important** — Do first\n• [Critical deadlines]\n\n**Important, Not Urgent** — Schedule\n• [Strategic work]\n\n**Urgent, Not Important** — Delegate\n• [Routine requests]\n\n**Neither** — Defer or eliminate\n\nTell me what's on your plate and I'll prioritize everything.";
   if (l.includes("write")||l.includes("document")||l.includes("report"))
-    return "Ready to help you write. I'll need:\n\n**1. Type** â Report, memo, proposal?\n**2. Audience** â Who reads this?\n**3. Key message** â Main takeaway?\n**4. Tone** â Formal, conversational, persuasive?\n**5. Length** â Rough target?\n\nShare these and I'll create a polished draft.";
+    return "Ready to help you write. I'll need:\n\n**1. Type** — Report, memo, proposal?\n**2. Audience** — Who reads this?\n**3. Key message** — Main takeaway?\n**4. Tone** — Formal, conversational, persuasive?\n**5. Length** — Rough target?\n\nShare these and I'll create a polished draft.";
   if (l.includes("brainstorm")||l.includes("idea"))
-    return "Let's brainstorm! Tell me:\n\nâ¢ What problem are you solving?\nâ¢ Any constraints?\nâ¢ What's been tried before?\n\nI'll generate ideas from multiple angles â conventional, creative, and wild cards. What topic should we explore?";
-  return "I'm here to help! I can:\n\nâ¢ **Draft & refine** â emails, documents, presentations\nâ¢ **Research & analyze** â trends, data, competitive insights\nâ¢ **Plan & organize** â meetings, tasks, schedules\nâ¢ **Strategize** â brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
+    return "Let's brainstorm! Tell me:\n\n• What problem are you solving?\n• Any constraints?\n• What's been tried before?\n\nI'll generate ideas from multiple angles — conventional, creative, and wild cards. What topic should we explore?";
+  return "I'm here to help! I can:\n\n• **Draft & refine** — emails, documents, presentations\n• **Research & analyze** — trends, data, competitive insights\n• **Plan & organize** — meetings, tasks, schedules\n• **Strategize** — brainstorm, evaluate options, decisions\n\nGive me more detail and I'll get right on it.";
 }
 
-/* âââ Render âââ */
+/* ─── Render ─── */
 function render() {
   const mob = isMobile();
   const has = state.messages.length > 0;
@@ -910,10 +910,10 @@ function render() {
   if (state.view === "chat") {
     const canSend = state.input.trim() && !state.typing;
     html += `<div class="inputbar"><div style="max-width:720px;margin:0 auto">`;
-    html += `<div class="send-wrap"><textarea class="send-input" id="msg-input" rows="1" placeholder="${mob?'Ask me anything...':'Ask me anything â emails, meetings, research, tasks...'}" oninput="onInput(event)" onkeydown="onKey(event)">${esc(state.input)}</textarea>`;
+    html += `<div class="send-wrap"><textarea class="send-input" id="msg-input" rows="1" placeholder="${mob?'Ask me anything...':'Ask me anything — emails, meetings, research, tasks...'}" oninput="onInput(event)" onkeydown="onKey(event)">${esc(state.input)}</textarea>`;
     html += `<button class="send-btn ${canSend?'active':'inactive'}" onclick="sendFromInput()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${canSend?'white':'#475569'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>`;
     html += `</div>`;
-    if (!mob) html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:#334155">Executive AI Assistant â Always ready to help</div>`;
+    if (!mob) html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:#334155">Executive AI Assistant — Always ready to help</div>`;
     html += `</div></div>`;
   }
 
@@ -937,7 +937,7 @@ function renderEmailView(mob) {
   let html = "";
   const hasAccounts = state.accounts.length > 0;
 
-  // No accounts connected â show connect screen
+  // No accounts connected — show connect screen
   if (!hasAccounts && !state.gmailLoading) {
     html += `<div class="gmail-connect">`;
     html += `<div class="gmail-connect-icon">${icon('mail',28,'#A5B4FC')}</div>`;
@@ -979,7 +979,7 @@ function renderEmailView(mob) {
     return html;
   }
 
-  /* âââ Inbox list view âââ */
+  /* ─── Inbox list view ─── */
 
   /* Header */
   html += `<div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between">`;
@@ -1105,7 +1105,7 @@ function renderCleanerView() {
     if (r.failed) parts.push(r.failed + ' failed');
     html += `<div style="font-size:14px;color:#94A3B8;margin-bottom:20px">${parts.join(' Â· ')}</div>`;
     if (r.failed > 0) {
-      html += '<div style="font-size:12px;color:#FCA5A5;margin-bottom:16px">Some emails failed â you may need to reconnect your account for updated permissions.</div>';
+      html += '<div style="font-size:12px;color:#FCA5A5;margin-bottom:16px">Some emails failed — you may need to reconnect your account for updated permissions.</div>';
     }
     html += `<button onclick="closeCleaner()" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;font-size:14px;font-weight:600;cursor:pointer">Done</button>`;
     html += '</div>';
@@ -1207,7 +1207,7 @@ function renderChatView(mob, has, filtered, today) {
 
   if (!has) {
     if (mob && state.installHint) {
-      html += `<div class="install-hint">${icon('share',16)}<span style="flex:1">Tap <strong>Share â Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px">${icon('x',14)}</button></div>`;
+      html += `<div class="install-hint">${icon('share',16)}<span style="flex:1">Tap <strong>Share → Add to Home Screen</strong> to use like a native app</span><button onclick="dismissInstall()" style="background:none;border:none;color:#64748B;cursor:pointer;padding:2px">${icon('x',14)}</button></div>`;
     }
 
     html += `<div style="margin-bottom:${mob?28:40}px">`;
@@ -1250,7 +1250,7 @@ function renderChatView(mob, has, filtered, today) {
   return html;
 }
 
-/* âââ Actions âââ */
+/* ─── Actions ─── */
 function openSidebar() { state.sidebarOpen=true; render(); }
 function closeSidebar() { state.sidebarOpen=false; render(); }
 function newChat() { state.messages=[]; state.sidebarOpen=false; state.view="chat"; render(); }
@@ -1310,11 +1310,11 @@ function sendMsg(text) {
   }, 700 + Math.random() * 1000);
 }
 
-/* âââ Init âââ */
+/* ─── Init ─── */
 window.addEventListener("resize", render);
 render();
 
-// Remove ALL service workers and caches â they cause issues with Google sign-in
+// Remove ALL service workers and caches — they cause issues with Google sign-in
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
