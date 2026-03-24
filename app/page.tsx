@@ -6,6 +6,7 @@ export default async function RootPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
+    // Check if user has completed onboarding
     const { data: profile } = await supabase
       .from('users')
       .select('name, brokerage')
