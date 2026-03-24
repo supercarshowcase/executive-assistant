@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
 
@@ -40,19 +42,19 @@ export default function LoginPage() {
             </h2>
             <ul className="text-xs text-blue-800 space-y-2">
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                <span className="text-blue-600 font-bold mt-0.5">{String.fromCharCode(10003)}</span>
                 <span>Get AI-powered daily briefings with priority actions</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                <span className="text-blue-600 font-bold mt-0.5">{String.fromCharCode(10003)}</span>
                 <span>Automatically triage and categorize your emails</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                <span className="text-blue-600 font-bold mt-0.5">{String.fromCharCode(10003)}</span>
                 <span>Track leads, transactions, and deadlines</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 font-bold mt-0.5">✓</span>
+                <span className="text-blue-600 font-bold mt-0.5">{String.fromCharCode(10003)}</span>
                 <span>Manage multiple email accounts seamlessly</span>
               </li>
             </ul>
@@ -115,18 +117,18 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="border-t border-gray-200 pt-6">
             <p className="text-xs text-gray-500 text-center mb-3">
-              We'll never access your passwords. We use OAuth 2.0 to securely
+              We&apos;ll never access your passwords. We use OAuth 2.0 to securely
               connect to your Gmail and Google Calendar.
             </p>
             <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
               <Link href="#" className="hover:text-gray-700 transition-colors">
                 Privacy
               </Link>
-              <span>•</span>
+              <span>&bull;</span>
               <Link href="#" className="hover:text-gray-700 transition-colors">
                 Terms
               </Link>
-              <span>•</span>
+              <span>&bull;</span>
               <Link href="#" className="hover:text-gray-700 transition-colors">
                 Support
               </Link>
@@ -137,10 +139,10 @@ export default function LoginPage() {
         {/* Testimonial */}
         <div className="mt-8 text-center">
           <p className="text-sm text-blue-100 italic">
-            "Executive AI Pro saved me 10 hours a week by automating my email
-            triage and keeping me on top of deadlines."
+            &quot;Executive AI Pro saved me 10 hours a week by automating my email
+            triage and keeping me on top of deadlines.&quot;
           </p>
-          <p className="text-xs text-blue-200 mt-2">— Real Estate Agent</p>
+          <p className="text-xs text-blue-200 mt-2">&mdash; Real Estate Agent</p>
         </div>
       </div>
     </div>
