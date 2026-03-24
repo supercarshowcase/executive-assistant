@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { createBrowserClient } from './supabase';
+import { createBrowserClient } from './supabase-browser';
 import type { User, HealthStatus } from '@/types';
 
 // Hook to get current authenticated user

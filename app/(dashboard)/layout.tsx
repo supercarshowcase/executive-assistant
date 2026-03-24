@@ -16,7 +16,7 @@ import {
 import { HealthBanner } from '@/components/ui/HealthBanner';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useUser } from '@/lib/hooks';
-import { createBrowserClient } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser';
 
 interface DashboardLayoutProps {
   children: ReactNode;

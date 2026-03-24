@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import { VoiceInput } from '@/components/ui/VoiceInput';
-import { createBrowserClient } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser';
 import type { EmailAccount } from '@/types';
 
 type OnboardingStep = 'profile' | 'email' | 'labels';

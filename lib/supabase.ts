@@ -1,5 +1,4 @@
 import { createClient as createServerClient } from '@supabase/supabase-js';
-import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { User, EmailAccount } from '@/types';
 
@@ -11,23 +10,11 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createSupabaseBrowserClient({
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey,
-    options: {
-      auth: {
-        storage: {
-          getItem: (key: string) => {
-            return cookieStore.get(key)?.value ?? null;
-          },
-          setItem: (key: string, value: string) => {
-            cookieStore.set(key, value);
-          },
-          removeItem: (key: string) => {
-            cookieStore.delete(key);
-          },
-        },
-      },
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() { return cookieStore.getAll(); },
+      setAll(cookiesToSet) { cookiesToSet.forEach(({ name, value, options: o }) => cookieStore.set(name, value, o)); }
+    },
     },
   });
 }

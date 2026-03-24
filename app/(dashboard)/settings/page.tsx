@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { VoiceInput } from '@/components/ui/VoiceInput';
 import { useAsync, useUser } from '@/lib/hooks';
-import { createBrowserClient } from '@/lib/supabase';
+import { createBrowserClient } from '@/lib/supabase-browser';
 import type { User, EmailAccount } from '@/types';
 
 interface EmailAccountFormData {
