@@ -26,11 +26,11 @@ function getServiceClient() {
   });
 }
 
-function mapTriaged(row: any) {
+function mapContent(row: any) {
   return {
-    id: row.id, accountId: row.account_id, gmailId: row.gmail_id,
-    category: row.category, summary: row.summary,
-    suggestedAction: row.suggested_action, createdAt: row.created_at,
+    id: row.id, title: row.title, category: row.category,
+    tags: row.tags, body: row.body, isNew: row.is_new,
+    createdAt: row.created_at,
   };
 }
 
@@ -40,23 +40,31 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const db = getServiceClient();
+    const { data, error } = await db.from('content_library').select('*').order('created_at', { ascending: false });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json((data || []).map(mapContent));
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
-    // Get user's email account IDs
-    const { data: accounts } = await db.from('email_accounts').select('id').eq('user_id', user.id);
-    const accountIds = (accounts || []).map((a) => a.id);
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUser(request);
+    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    if (accountIds.length === 0) {
-      return NextResponse.json({ emails: [], message: 'No email accounts connected' });
-    }
-
-    const { data, error } = await db.from('email_triage_cache')
-      .select('*')
-      .in('account_id', accountIds)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const body = await request.json();
+    const db = getServiceClient();
+    const { data, error } = await db.from('content_library').insert({
+      title: body.title,
+      category: body.category,
+      tags: body.tags || [],
+      body: body.body,
+      is_new: true,
+    }).select().single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ emails: (data || []).map(mapTriaged) });
+    return NextResponse.json(mapContent(data));
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

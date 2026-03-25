@@ -26,11 +26,13 @@ function getServiceClient() {
   });
 }
 
-function mapTriaged(row: any) {
+function mapAccount(row: any) {
   return {
-    id: row.id, accountId: row.account_id, gmailId: row.gmail_id,
-    category: row.category, summary: row.summary,
-    suggestedAction: row.suggested_action, createdAt: row.created_at,
+    id: row.id, userId: row.user_id, email: row.email,
+    label: row.label, contextNote: row.context_note,
+    accessToken: row.access_token ? '***' : null,
+    refreshToken: row.refresh_token ? '***' : null,
+    tokenExpiresAt: row.token_expires_at,
   };
 }
 
@@ -40,23 +42,9 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const db = getServiceClient();
-
-    // Get user's email account IDs
-    const { data: accounts } = await db.from('email_accounts').select('id').eq('user_id', user.id);
-    const accountIds = (accounts || []).map((a) => a.id);
-
-    if (accountIds.length === 0) {
-      return NextResponse.json({ emails: [], message: 'No email accounts connected' });
-    }
-
-    const { data, error } = await db.from('email_triage_cache')
-      .select('*')
-      .in('account_id', accountIds)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
+    const { data, error } = await db.from('email_accounts').select('*').eq('user_id', user.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ emails: (data || []).map(mapTriaged) });
+    return NextResponse.json((data || []).map(mapAccount));
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

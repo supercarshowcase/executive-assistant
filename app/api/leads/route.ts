@@ -26,11 +26,13 @@ function getServiceClient() {
   });
 }
 
-function mapTriaged(row: any) {
+function mapLead(row: any) {
   return {
-    id: row.id, accountId: row.account_id, gmailId: row.gmail_id,
-    category: row.category, summary: row.summary,
-    suggestedAction: row.suggested_action, createdAt: row.created_at,
+    id: row.id, userId: row.user_id, name: row.name, email: row.email,
+    phone: row.phone, leadType: row.lead_type, stage: row.stage,
+    notes: row.notes, lastContactDate: row.last_contact_date,
+    followUpDate: row.follow_up_date, sourceEmailId: row.source_email_id,
+    createdAt: row.created_at,
   };
 }
 
@@ -40,23 +42,34 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const db = getServiceClient();
+    const { data, error } = await db.from('leads').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json((data || []).map(mapLead));
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
-    // Get user's email account IDs
-    const { data: accounts } = await db.from('email_accounts').select('id').eq('user_id', user.id);
-    const accountIds = (accounts || []).map((a) => a.id);
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUser(request);
+    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    if (accountIds.length === 0) {
-      return NextResponse.json({ emails: [], message: 'No email accounts connected' });
-    }
-
-    const { data, error } = await db.from('email_triage_cache')
-      .select('*')
-      .in('account_id', accountIds)
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const body = await request.json();
+    const db = getServiceClient();
+    const { data, error } = await db.from('leads').insert({
+      user_id: user.id,
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+      lead_type: body.leadType || 'buyer',
+      stage: 'new',
+      notes: body.notes || '',
+      follow_up_date: body.followUpDate || null,
+    }).select().single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ emails: (data || []).map(mapTriaged) });
+    return NextResponse.json(mapLead(data));
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

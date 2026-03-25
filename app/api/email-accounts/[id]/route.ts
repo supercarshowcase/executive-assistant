@@ -26,37 +26,38 @@ function getServiceClient() {
   });
 }
 
-function mapTriaged(row: any) {
-  return {
-    id: row.id, accountId: row.account_id, gmailId: row.gmail_id,
-    category: row.category, summary: row.summary,
-    suggestedAction: row.suggested_action, createdAt: row.created_at,
-  };
-}
-
-export async function GET(request: NextRequest) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getUser(request);
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
+    const { id } = await params;
+    const body = await request.json();
     const db = getServiceClient();
 
-    // Get user's email account IDs
-    const { data: accounts } = await db.from('email_accounts').select('id').eq('user_id', user.id);
-    const accountIds = (accounts || []).map((a) => a.id);
+    const updateData: any = {};
+    if (body.label !== undefined) updateData.label = body.label;
+    if (body.contextNote !== undefined) updateData.context_note = body.contextNote;
+    updateData.updated_at = new Date().toISOString();
 
-    if (accountIds.length === 0) {
-      return NextResponse.json({ emails: [], message: 'No email accounts connected' });
-    }
-
-    const { data, error } = await db.from('email_triage_cache')
-      .select('*')
-      .in('account_id', accountIds)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
+    const { data, error } = await db.from('email_accounts').update(updateData).eq('id', id).eq('user_id', user.id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ emails: (data || []).map(mapTriaged) });
+    return NextResponse.json(data);
+  } catch (err) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const user = await getUser(request);
+    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+    const { id } = await params;
+    const db = getServiceClient();
+    const { error } = await db.from('email_accounts').delete().eq('id', id).eq('user_id', user.id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
