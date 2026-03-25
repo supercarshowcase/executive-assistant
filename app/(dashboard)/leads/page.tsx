@@ -83,7 +83,7 @@ export default function LeadsPage() {
 
   // Filter and search leads
   const filteredLeads = useMemo(() => {
-    return (leads as Lead[]).filter((lead) => {
+    return ((leads || []) as Lead[]).filter((lead) => {
       const matchesSearch =
         lead.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
         lead.email.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
@@ -125,7 +125,7 @@ export default function LeadsPage() {
       dead: 0,
     };
 
-    (leads as Lead[]).forEach((lead) => {
+    ((leads || []) as Lead[]).forEach((lead) => {
       counts[lead.stage]++;
     });
 
@@ -180,7 +180,7 @@ export default function LeadsPage() {
 
   const handleMoveLead = useCallback(
     async (leadId: string, newStage: Lead['stage']) => {
-      const lead = (leads as Lead[]).find((l) => l.id === leadId);
+      const lead = ((leads || []) as Lead[]).find((l) => l.id === leadId);
       if (!lead) return;
 
       try {
@@ -288,7 +288,7 @@ export default function LeadsPage() {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {filteredLeads.length === 0 && debouncedQuery === '' && filterType === 'all' ? (
           <EmptyState
-            icon="💼"
+            icon="ð¼"
             title="No leads yet"
             description="New leads will appear automatically when inquiry emails are detected. You can also add leads manually."
             action={

@@ -88,7 +88,7 @@ export default function TransactionsPage() {
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     if (filterStatus === 'all') return transactions as Transaction[];
-    return (transactions as Transaction[]).filter(
+    return ((transactions || []) as Transaction[]).filter(
       (t) => t.status === filterStatus
     );
   }, [transactions, filterStatus]);
@@ -96,7 +96,7 @@ export default function TransactionsPage() {
   // Get deadline alerts (< 7 days)
   const deadlineAlerts = useMemo(() => {
     const now = new Date();
-    return (transactions as Transaction[]).filter((t) => {
+    return ((transactions || []) as Transaction[]).filter((t) => {
       let deadlineDate: Date | null = null;
 
       if (
@@ -281,7 +281,7 @@ export default function TransactionsPage() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         {filteredTransactions.length === 0 ? (
           <EmptyState
-            icon="📋"
+            icon="ð"
             title="No transactions"
             description={
               filterStatus === 'all'
@@ -573,7 +573,7 @@ export default function TransactionsPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select a lead (optional)</option>
-              {(leads as Lead[]).map((lead) => (
+              {((leads || []) as Lead[]).map((lead) => (
                 <option key={lead.id} value={lead.id}>
                   {lead.name} ({lead.leadType})
                 </option>

@@ -328,7 +328,7 @@ export function useAsync<T>(
   immediate: boolean = true
 ) {
   const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>(
-    'idle'
+    immediate ? 'pending' : 'idle'
   );
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);

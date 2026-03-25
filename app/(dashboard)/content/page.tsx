@@ -70,7 +70,7 @@ export default function ContentPage() {
 
   // Filter content
   const filteredContent = useMemo(() => {
-    return (content as ContentItem[]).filter((item) => {
+    return ((content || []) as ContentItem[]).filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
         item.body.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
@@ -87,7 +87,7 @@ export default function ContentPage() {
 
   // Get new items
   const newItems = useMemo(() => {
-    return (content as ContentItem[]).filter((item) => item.isNew);
+    return ((content || []) as ContentItem[]).filter((item) => item.isNew);
   }, [content]);
 
   const handleAddContent = useCallback(async () => {
@@ -289,7 +289,7 @@ export default function ContentPage() {
         {/* All Content */}
         {filteredContent.length === 0 ? (
           <EmptyState
-            icon="📚"
+            icon="ð"
             title="No content found"
             description={
               debouncedQuery
