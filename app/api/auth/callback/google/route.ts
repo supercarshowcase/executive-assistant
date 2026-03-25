@@ -25,61 +25,83 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_code', request.url));
     }
 
-    // Exchange authorization code for tokens
+    // Exchange authorization code for tokens (includes id_token)
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Get user info from Google
+    if (!tokens.id_token) {
+      console.error('No id_token received from Google');
+      return NextResponse.redirect(new URL('/login?error=no_id_token', request.url));
+    }
+
+    // Get user info from Google for profile creation
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data: googleUser } = await oauth2.userinfo.get();
-
-    const email = googleUser.email;
+    const email = googleUser.email || '';
     const name = googleUser.name || '';
-    const picture = googleUser.picture || '';
 
     if (!email) {
       return NextResponse.redirect(new URL('/login?error=no_email', request.url));
     }
 
-    // Admin client for user management
+    // Determine redirect destination before creating the response
+    // Check if user profile exists and has completed onboarding
     const adminSupabase = createPlainClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Check if user exists in our users table
     const { data: existingProfile } = await adminSupabase
       .from('users')
       .select('id, name, brokerage')
       .eq('email', email)
       .single();
 
-    let userId: string;
-    let hasCompletedOnboarding = false;
+    const hasCompletedOnboarding = !!(existingProfile?.name && existingProfile?.brokerage);
+    const redirectTo = hasCompletedOnboarding ? '/home' : '/onboarding';
 
-    if (existingProfile) {
-      userId = existingProfile.id;
-      hasCompletedOnboarding = !!(existingProfile.name && existingProfile.brokerage);
-    } else {
-      // Create new user in Supabase Auth
-      const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
-        email,
-        email_confirm: true,
-        user_metadata: { name, avatar_url: picture },
-      });
+    // Create the redirect response FIRST so we can attach cookies to it
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
 
-      if (createError || !newUser.user) {
-        console.error('Error creating user:', createError);
-        return NextResponse.redirect(new URL('/login?error=create_failed', request.url));
-      }
+    // Create Supabase SSR client that writes session cookies onto the response
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name: cookieName, value, options }) => {
+            response.cookies.set(cookieName, value, options);
+          });
+        },
+      },
+    });
 
-      userId = newUser.user.id;
+    // Sign in with the Google ID token — this creates a Supabase session
+    // and sets auth cookies on the response via the setAll callback
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: tokens.id_token,
+      access_token: tokens.access_token || undefined,
+    });
 
-      // Create user profile row
-      await adminSupabase.from('users').insert({
+    if (signInError) {
+      console.error('Error signing in with ID token:', signInError);
+      return NextResponse.redirect(new URL(`/login?error=signin_failed&msg=${encodeURIComponent(signInError.message)}`, request.url));
+    }
+
+    const userId = signInData.user?.id;
+
+    if (!userId) {
+      return NextResponse.redirect(new URL('/login?error=no_user', request.url));
+    }
+
+    // Ensure user profile row exists in our users table
+    if (!existingProfile) {
+      await adminSupabase.from('users').upsert({
         id: userId,
         email,
         name,
-      });
+      }, { onConflict: 'id' });
     }
 
     // Store Google OAuth tokens for Gmail/Calendar access
@@ -102,53 +124,12 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Generate a magic link to create a Supabase session
-    const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email,
-    });
-
-    if (linkError || !linkData) {
-      console.error('Error generating session link:', linkError);
-      return NextResponse.redirect(new URL('/login?error=link_failed', request.url));
-    }
-
-    // Determine redirect destination
-    const redirectTo = hasCompletedOnboarding ? '/home' : '/onboarding';
-
-    // Create the redirect response FIRST
-    const response = NextResponse.redirect(new URL(redirectTo, request.url));
-
-    // Create a Supabase SSR client that writes cookies to the response
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    });
-
-    // Verify OTP to establish session — this sets auth cookies on the response
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: linkData.properties.hashed_token,
-      type: 'magiclink',
-    });
-
-    if (verifyError) {
-      console.error('Error establishing session:', verifyError);
-      return NextResponse.redirect(new URL('/login?error=session_failed', request.url));
-    }
-
     return response;
   } catch (error) {
     console.error('Google OAuth callback error:', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.redirect(
-      new URL('/login?error=auth_failed', request.url)
+      new URL(`/login?error=auth_failed&msg=${encodeURIComponent(msg)}`, request.url)
     );
   }
 }
