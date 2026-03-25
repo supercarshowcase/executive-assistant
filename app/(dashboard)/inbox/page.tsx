@@ -52,7 +52,7 @@ export default function InboxPage() {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await fetch('/api/email/triage', {
+        const response = await fetch('/api/email-accounts', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -61,10 +61,10 @@ export default function InboxPage() {
           throw new Error('Failed to fetch accounts');
         }
 
-        const data = (await response.json()) as { accounts: EmailAccount[] };
-        setAccounts(data.accounts);
-        if (data.accounts.length > 0) {
-          setSelectedAccountId(data.accounts[0].id);
+        const data = (await response.json()) as EmailAccount[];
+        setAccounts(data || []);
+        if (data && data.length > 0) {
+          setSelectedAccountId(data[0].id);
         }
       } catch (err) {
         setError(
@@ -97,7 +97,7 @@ export default function InboxPage() {
         }
 
         const data = (await response.json()) as { emails: TriagedEmail[] };
-        setEmails(data.emails);
+        setEmails(data.emails || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load emails');
       } finally {
@@ -159,7 +159,7 @@ export default function InboxPage() {
     setComposeModal(true);
   };
 
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const selectedAccount = (accounts || []).find((a) => a.id === selectedAccountId);
 
   return (
     <div className="w-full">
