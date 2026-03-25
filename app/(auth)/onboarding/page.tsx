@@ -170,7 +170,7 @@ export default function OnboardingPage() {
             .from('email_accounts')
             .update({
               label: labelData.label,
-              contextNote: labelData.contextNote,
+              context_note: labelData.contextNote,
             })
             .eq('id', accountId);
 
@@ -181,7 +181,7 @@ export default function OnboardingPage() {
       // Mark onboarding as complete
       const { error: onboardError } = await supabase
         .from('users')
-        .update({ isPremium: true })
+        .update({ is_premium: true })
         .eq('id', user.id);
 
       if (onboardError) throw onboardError;
