@@ -16,7 +16,7 @@ export default async function RootPage() {
       .single();
 
     if (profile?.name && profile?.brokerage) {
-      redirect('/inbox');
+      redirect('/home');
     } else {
       redirect('/onboarding');
     }
