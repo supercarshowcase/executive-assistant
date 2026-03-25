@@ -72,7 +72,7 @@ export default function SettingsPage() {
 
   // Update email accounts
   useEffect(() => {
-    setEmailAccounts(accountsData as EmailAccount[]);
+    setEmailAccounts((accountsData || []) as EmailAccount[]);
   }, [accountsData]);
 
   const handleProfileSave = useCallback(async () => {
@@ -372,7 +372,7 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          {emailAccounts.length === 0 ? (
+          {(emailAccounts || []).length === 0 ? (
             <div className="text-center py-8 text-gray-600">
               <Mail className="w-12 h-12 mx-auto mb-3 text-gray-400" />
               <p className="text-sm">No email accounts connected</p>
@@ -382,7 +382,7 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {emailAccounts.map((account) => (
+              {(emailAccounts || []).map((account) => (
                 <div key={account.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                   Gmail
                 </span>
               </div>
-              {emailAccounts.length > 0 ? (
+              {(emailAccounts || []).length > 0 ? (
                 <div className="flex items-center gap-1 text-green-600">
                   <Check className="w-4 h-4" />
                   <span className="text-sm font-medium">Connected</span>
@@ -602,7 +602,7 @@ export default function SettingsPage() {
           <p className="text-sm text-gray-600">
             Are you sure you want to remove{' '}
             <span className="font-medium">
-              {emailAccounts.find((a) => a.id === confirmRemoveAccountId)
+              {(emailAccounts || []).find((a) => a.id === confirmRemoveAccountId)
                 ?.email}
             </span>
             ?
