@@ -1,4 +1,5 @@
-import { createClient as createServerClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { createClient as createPlainClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { User, EmailAccount } from '@/types';
 
@@ -6,20 +7,31 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Server-side client
+// Server-side client with cookie-based auth (for App Router server components & route handlers)
 export async function createClient() {
   const cookieStore = await cookies();
+
   return createServerClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // setAll called from a Server Component — safe to ignore
+        }
+      },
     },
   });
 }
 
-// Server-side service client with admin privileges
+// Server-side service client with admin privileges (no cookies needed)
 export function createServiceClient() {
-  return createServerClient(supabaseUrl, supabaseServiceKey, {
+  return createPlainClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -27,82 +39,88 @@ export function createServiceClient() {
   });
 }
 
-// Get current authenticated user
+// Get the currently authenticated user
 export async function getUser() {
-  try {
-    const supabase = await createClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) { console.error('Error getting user:', error); return null; }
-    return user;
-  } catch (error) { console.error('Failed to get user:', error); return null; }
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return user;
 }
 
-// Get user profile from database
+// Get user profile from our users table
 export async function getUserProfile(userId: string): Promise<User | null> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
-    if (error) { console.error('Error fetching user profile:', error); return null; }
-    return data as User;
-  } catch (error) { console.error('Failed to get user profile:', error); return null; }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error) return null;
+  return data;
 }
 
 // Get all email accounts for a user
 export async function getEmailAccounts(userId: string): Promise<EmailAccount[]> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('email_accounts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    if (error) { console.error('Error fetching email accounts:', error); return []; }
-    return (data || []) as EmailAccount[];
-  } catch (error) { console.error('Failed to get email accounts:', error); return []; }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('email_accounts')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) return [];
+  return data || [];
 }
 
-// Get a single email account
+// Get a specific email account
 export async function getEmailAccount(userId: string, accountId: string): Promise<EmailAccount | null> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('email_accounts').select('*').eq('user_id', userId).eq('id', accountId).single();
-    if (error) { console.error('Error fetching email account:', error); return null; }
-    return data as EmailAccount;
-  } catch (error) { console.error('Failed to get email account:', error); return null; }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('email_accounts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('id', accountId)
+    .single();
+  if (error) return null;
+  return data;
 }
 
 // Update user profile
 export async function updateUserProfile(userId: string, updates: Partial<User>): Promise<User | null> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('users').update(updates).eq('id', userId).select().single();
-    if (error) { console.error('Error updating user profile:', error); return null; }
-    return data as User;
-  } catch (error) { console.error('Failed to update user profile:', error); return null; }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+  if (error) return null;
+  return data;
 }
 
-// Upsert email account
+// Upsert an email account
 export async function upsertEmailAccount(userId: string, account: Partial<EmailAccount>): Promise<EmailAccount | null> {
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.from('email_accounts').upsert({ ...account, user_id: userId, updated_at: new Date().toISOString() }, { onConflict: 'id' }).select().single();
-    if (error) { console.error('Error upserting email account:', error); return null; }
-    return data as EmailAccount;
-  } catch (error) { console.error('Failed to upsert email account:', error); return null; }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('email_accounts')
+    .upsert({ ...account, user_id: userId }, { onConflict: 'user_id,email' })
+    .select()
+    .single();
+  if (error) return null;
+  return data;
 }
 
-// Delete email account
+// Delete an email account
 export async function deleteEmailAccount(userId: string, accountId: string): Promise<boolean> {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.from('email_accounts').delete().eq('user_id', userId).eq('id', accountId);
-    if (error) { console.error('Error deleting email account:', error); return false; }
-    return true;
-  } catch (error) { console.error('Failed to delete email account:', error); return false; }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('email_accounts')
+    .delete()
+    .eq('user_id', userId)
+    .eq('id', accountId);
+  return !error;
 }
 
-// Logout user
+// Logout the current user
 export async function logout() {
-  try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signOut();
-    if (error) { console.error('Error signing out:', error); return false; }
-    return true;
-  } catch (error) { console.error('Failed to logout:', error); return false; }
+  const supabase = await createClient();
+  await supabase.auth.signOut();
 }

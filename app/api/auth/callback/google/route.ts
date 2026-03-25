@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient, createClient } from '@/lib/supabase';
+import { createClient as createPlainClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { google } from 'googleapis';
 
 export const dynamic = 'force-dynamic';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 const oauth2Client = new google.auth.OAuth2(
@@ -37,7 +41,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=no_email', request.url));
     }
 
-    const adminSupabase = createServiceClient();
+    // Admin client for user management
+    const adminSupabase = createPlainClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     // Check if user exists in our users table
     const { data: existingProfile } = await adminSupabase
@@ -50,11 +57,10 @@ export async function GET(request: NextRequest) {
     let hasCompletedOnboarding = false;
 
     if (existingProfile) {
-      // Existing user
       userId = existingProfile.id;
       hasCompletedOnboarding = !!(existingProfile.name && existingProfile.brokerage);
     } else {
-      // New user — create in Supabase Auth
+      // Create new user in Supabase Auth
       const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
         email,
         email_confirm: true,
@@ -96,7 +102,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Generate a magic link to create a proper Supabase session
+    // Generate a magic link to create a Supabase session
     const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
       type: 'magiclink',
       email,
@@ -104,11 +110,30 @@ export async function GET(request: NextRequest) {
 
     if (linkError || !linkData) {
       console.error('Error generating session link:', linkError);
-      return NextResponse.redirect(new URL('/login?error=session_failed', request.url));
+      return NextResponse.redirect(new URL('/login?error=link_failed', request.url));
     }
 
-    // Verify the OTP to establish a session (sets cookies automatically)
-    const supabase = await createClient();
+    // Determine redirect destination
+    const redirectTo = hasCompletedOnboarding ? '/home' : '/onboarding';
+
+    // Create the redirect response FIRST
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
+
+    // Create a Supabase SSR client that writes cookies to the response
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
+
+    // Verify OTP to establish session — this sets auth cookies on the response
     const { error: verifyError } = await supabase.auth.verifyOtp({
       token_hash: linkData.properties.hashed_token,
       type: 'magiclink',
@@ -119,9 +144,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=session_failed', request.url));
     }
 
-    // Redirect based on onboarding status
-    const redirectTo = hasCompletedOnboarding ? '/home' : '/onboarding';
-    return NextResponse.redirect(new URL(redirectTo, request.url));
+    return response;
   } catch (error) {
     console.error('Google OAuth callback error:', error);
     return NextResponse.redirect(
